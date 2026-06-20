@@ -163,3 +163,50 @@ Whenever new updates are pushed, follow these steps to keep your local workspace
 # Contributors
 - Yashraj Deshmukh
 - Yash Shirsath
+
+---
+
+## Frontend Client Setup & Launch
+
+Ensure you have **Node.js (v18+)** installed on your system.
+
+### 1. Install Frontend Dependencies
+Navigate into the `/frontend` directory and install the packages:
+```bash
+cd frontend
+npm install
+```
+
+### 2. Run the Frontend in Development Mode
+Start the Vite development server:
+```bash
+npm run dev
+```
+The client dashboard will start on [http://localhost:5173/](http://localhost:5173/).
+
+---
+
+## Accessing the Platform (Initial Admin Login)
+
+To test the application locally when starting with a clean database, you must seed the initial Super Admin credentials.
+
+1. **Apply alembic migrations**:
+   ```bash
+   alembic upgrade head
+   ```
+2. **Seed the initial organization and admin account**:
+   Run the following command from the project root directory:
+   * **Windows (PowerShell)**:
+     ```powershell
+     .\venv\Scripts\python -c "from app.core.database import SessionLocal; from app.api.v1.endpoints.auth import get_auth_service; db = SessionLocal(); s = get_auth_service(db); s.register_user(email='admin@eduqate.com', password='Password@123', organization_slug='default-academy', organization_name='Default Academy', ip_address='127.0.0.1', user_agent='Script', request_id='boot'); print('Admin user created successfully!')"
+     ```
+   * **macOS / Linux**:
+     ```bash
+     python -c "from app.core.database import SessionLocal; from app.api.v1.endpoints.auth import get_auth_service; db = SessionLocal(); s = get_auth_service(db); s.register_user(email='admin@eduqate.com', password='Password@123', organization_slug='default-academy', organization_name='Default Academy', ip_address='127.0.0.1', user_agent='Script', request_id='boot'); print('Admin user created successfully!')"
+     ```
+3. **Login Details**:
+   Use these credentials on the frontend login page at [http://localhost:5173/login](http://localhost:5173/login):
+   * **Organization Slug**: `default-academy`
+   * **Email Address**: `admin@eduqate.com`
+   * **Password**: `Password@123`
+
