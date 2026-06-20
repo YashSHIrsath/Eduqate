@@ -1,3 +1,4 @@
+import React, { Suspense } from 'react';
 import {
   createRootRouteWithContext,
   createRoute,
@@ -9,12 +10,22 @@ import {
 } from '@tanstack/react-router';
 
 import { useAuth } from '../features/auth';
+
+// Direct imports for small components
 import { LoginCard } from '../features/auth/components/LoginCard';
-import { UserList } from '../features/users/components/UserList';
-import { UserDetails } from '../features/users/components/UserDetails';
-import { UserCreate } from '../features/users/components/UserCreate';
-import { UserEdit } from '../features/users/components/UserEdit';
-import { ForcedPasswordChange } from '../features/users/components/ForcedPasswordChange';
+
+// Lazy-loaded feature modules (Vite code-splitting)
+const UserList = React.lazy(() => import('../features/users/components/UserList').then(m => ({ default: m.UserList })));
+const UserDetails = React.lazy(() => import('../features/users/components/UserDetails').then(m => ({ default: m.UserDetails })));
+const UserCreate = React.lazy(() => import('../features/users/components/UserCreate').then(m => ({ default: m.UserCreate })));
+const UserEdit = React.lazy(() => import('../features/users/components/UserEdit').then(m => ({ default: m.UserEdit })));
+const ForcedPasswordChange = React.lazy(() => import('../features/users/components/ForcedPasswordChange').then(m => ({ default: m.ForcedPasswordChange })));
+const DashboardHome = React.lazy(() => import('../features/dashboard/components/DashboardHome').then(m => ({ default: m.DashboardHome })));
+const RoleList = React.lazy(() => import('../features/roles/components/RoleList').then(m => ({ default: m.RoleList })));
+const RoleCreate = React.lazy(() => import('../features/roles/components/RoleCreate').then(m => ({ default: m.RoleCreate })));
+const RoleDetails = React.lazy(() => import('../features/roles/components/RoleDetails').then(m => ({ default: m.RoleDetails })));
+const RoleEdit = React.lazy(() => import('../features/roles/components/RoleEdit').then(m => ({ default: m.RoleEdit })));
+const PermissionsMatrix = React.lazy(() => import('../features/permissions/components/PermissionsMatrix').then(m => ({ default: m.PermissionsMatrix })));
 
 import { 
   Building2, 
@@ -25,9 +36,28 @@ import {
   Shield, 
   User as UserIcon,
   CircleUser,
-  Activity,
-  KeyRound
+  KeyRound,
+  Loader2
 } from 'lucide-react';
+
+// Suspense fallback component for lazy routes
+const RouteFallback = () => (
+  <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
+    <Loader2 className="h-8 w-8 text-brand-500 animate-spin" />
+    <span className="text-sm font-semibold">Loading module...</span>
+  </div>
+);
+
+// Wrap lazy component in Suspense
+const withSuspense = (LazyComponent: React.LazyExoticComponent<React.FC>) => {
+  const SuspenseWrapped: React.FC = () => (
+    <Suspense fallback={<RouteFallback />}>
+      <LazyComponent />
+    </Suspense>
+  );
+  SuspenseWrapped.displayName = `Suspense(${LazyComponent.displayName || 'LazyComponent'})`;
+  return SuspenseWrapped;
+};
 
 // 1. Define Route Context structure
 export interface MyRouterContext {
@@ -169,27 +199,37 @@ const dashboardLayoutRoute = createRoute({
               </Link>
             )}
 
-            {/* Scoped Role Management Links */}
+            {/* Scoped Role Management Link */}
             {hasPermission('roles:view') && (
-              <div className="opacity-60 cursor-not-allowed flex items-center gap-3 px-4 py-3 rounded-lg text-sm border-l-4 border-transparent text-slate-500 select-none">
+              <Link
+                to="/roles"
+                activeProps={{ className: 'bg-brand-600/10 text-brand-400 border-l-4 border-brand-500 font-medium' }}
+                inactiveProps={{ className: 'hover:bg-slate-800/50 hover:text-white border-l-4 border-transparent' }}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all"
+              >
                 <Shield className="h-4.5 w-4.5" />
-                Manage Roles (UI Locked)
-              </div>
+                Manage Roles
+              </Link>
             )}
 
-            {/* Scoped Permissions Links */}
+            {/* Scoped Permissions Link */}
             {hasPermission('permissions:view') && (
-              <div className="opacity-60 cursor-not-allowed flex items-center gap-3 px-4 py-3 rounded-lg text-sm border-l-4 border-transparent text-slate-500 select-none">
+              <Link
+                to="/permissions"
+                activeProps={{ className: 'bg-brand-600/10 text-brand-400 border-l-4 border-brand-500 font-medium' }}
+                inactiveProps={{ className: 'hover:bg-slate-800/50 hover:text-white border-l-4 border-transparent' }}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all"
+              >
                 <KeyRound className="h-4.5 w-4.5" />
-                System Permissions (UI Locked)
-              </div>
+                System Permissions
+              </Link>
             )}
 
-            {/* Scoped Settings Links */}
+            {/* Scoped Settings Link (UI Locked — not in this sprint) */}
             {hasPermission('settings:view') && (
               <div className="opacity-60 cursor-not-allowed flex items-center gap-3 px-4 py-3 rounded-lg text-sm border-l-4 border-transparent text-slate-500 select-none">
                 <SettingsIcon className="h-4.5 w-4.5" />
-                System Settings (UI Locked)
+                System Settings
               </div>
             )}
           </nav>
@@ -250,113 +290,7 @@ const dashboardLayoutRoute = createRoute({
 const dashboardHomeRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/dashboard',
-  component: () => {
-    const { user, organization, roles, permissions } = useAuth();
-
-    return (
-      <div className="space-y-8 animate-fade-in">
-        {/* Welcome Section */}
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800">Overview Dashboard</h2>
-          <p className="text-slate-500 text-sm">Verify active auth session bootstrap payloads, token context, and RBAC rules below.</p>
-        </div>
-
-        {/* Verification Matrix Widgets */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* User & Organization Details */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-5">
-              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-                <UserIcon className="h-5 w-5" />
-              </div>
-              <h3 className="font-bold text-slate-800">Profile Bootstrap Details</h3>
-            </div>
-            <dl className="space-y-4 text-sm">
-              <div className="flex justify-between py-1 border-b border-slate-50">
-                <dt className="text-slate-400">User ID</dt>
-                <dd className="font-mono text-xs text-slate-800">{user?.id}</dd>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-50">
-                <dt className="text-slate-400">Email Address</dt>
-                <dd className="font-semibold text-slate-800">{user?.email}</dd>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-50">
-                <dt className="text-slate-400">Account Status</dt>
-                <dd>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    {user?.status}
-                  </span>
-                </dd>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-50">
-                <dt className="text-slate-400">Organization Name</dt>
-                <dd className="font-semibold text-slate-800">{organization?.name}</dd>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-50">
-                <dt className="text-slate-400">Organization Code</dt>
-                <dd className="font-mono text-slate-800">{organization?.code}</dd>
-              </div>
-              <div className="flex justify-between py-1">
-                <dt className="text-slate-400">Created At</dt>
-                <dd className="text-slate-800">{new Date(user?.created_at || '').toLocaleString()}</dd>
-              </div>
-            </dl>
-          </div>
-
-          {/* Assigned Roles widget */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-5">
-              <div className="p-2 bg-brand-50 text-brand-600 rounded-lg">
-                <Shield className="h-5 w-5" />
-              </div>
-              <h3 className="font-bold text-slate-800">Active Tenant Roles</h3>
-            </div>
-            <div className="space-y-4">
-              {roles.map((role: any) => (
-                <div key={role.id} className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-bold text-slate-800 text-sm">{role.name}</span>
-                    {role.is_system_role && (
-                      <span className="text-[10px] uppercase font-bold text-brand-600 tracking-wider bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">
-                        System Role
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500">{role.description || 'No description provided.'}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Effective Permissions widget */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-                <Activity className="h-5 w-5" />
-              </div>
-              <h3 className="font-bold text-slate-800">Effective Permissions Array</h3>
-            </div>
-            <span className="text-xs px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-700 font-semibold">
-              {permissions.length} Permissions Loaded
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {permissions.map((perm) => (
-              <span
-                key={perm}
-                className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-slate-100 text-slate-700 border border-slate-200"
-              >
-                {perm}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  },
+  component: withSuspense(DashboardHome),
 });
 
 // Users List Route
@@ -368,7 +302,7 @@ const usersListRoute = createRoute({
       throw redirect({ to: '/unauthorized' });
     }
   },
-  component: UserList,
+  component: withSuspense(UserList),
 });
 
 // Create User Route
@@ -380,7 +314,7 @@ const userCreateRoute = createRoute({
       throw redirect({ to: '/unauthorized' });
     }
   },
-  component: UserCreate,
+  component: withSuspense(UserCreate),
 });
 
 // User Details Route
@@ -392,7 +326,7 @@ const userDetailsRoute = createRoute({
       throw redirect({ to: '/unauthorized' });
     }
   },
-  component: UserDetails,
+  component: withSuspense(UserDetails),
 });
 
 // Edit User Route
@@ -404,7 +338,67 @@ const userEditRoute = createRoute({
       throw redirect({ to: '/unauthorized' });
     }
   },
-  component: UserEdit,
+  component: withSuspense(UserEdit),
+});
+
+// Roles List Route
+const rolesListRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: '/roles',
+  beforeLoad: ({ context }) => {
+    if (!context.auth.hasPermission('roles:view')) {
+      throw redirect({ to: '/unauthorized' });
+    }
+  },
+  component: withSuspense(RoleList),
+});
+
+// Create Role Route
+const roleCreateRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: '/roles/new',
+  beforeLoad: ({ context }) => {
+    if (!context.auth.hasPermission('roles:create')) {
+      throw redirect({ to: '/unauthorized' });
+    }
+  },
+  component: withSuspense(RoleCreate),
+});
+
+// Role Details Route
+const roleDetailsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: '/roles/$roleId',
+  beforeLoad: ({ context }) => {
+    if (!context.auth.hasPermission('roles:view')) {
+      throw redirect({ to: '/unauthorized' });
+    }
+  },
+  component: withSuspense(RoleDetails),
+});
+
+// Role Edit Route
+const roleEditRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: '/roles/$roleId/edit',
+  beforeLoad: ({ context }) => {
+    if (!context.auth.hasPermission('roles:update')) {
+      throw redirect({ to: '/unauthorized' });
+    }
+  },
+  component: withSuspense(RoleEdit),
+});
+
+// Permissions Matrix Route
+const permissionsRoute = createRoute({
+  getParentRoute: () => dashboardLayoutRoute,
+  path: '/permissions',
+  beforeLoad: ({ context }) => {
+    if (!context.auth.hasPermission('permissions:view')) {
+      throw redirect({ to: '/unauthorized' });
+    }
+  },
+  component: withSuspense(PermissionsMatrix),
 });
 
 // Forced Password Change Route
@@ -419,7 +413,7 @@ const changePasswordRoute = createRoute({
       throw redirect({ to: '/dashboard' });
     }
   },
-  component: ForcedPasswordChange,
+  component: withSuspense(ForcedPasswordChange),
 });
 
 // Unauthorized Page Route
@@ -473,6 +467,11 @@ const routeTree = rootRoute.addChildren([
     userCreateRoute,
     userDetailsRoute,
     userEditRoute,
+    rolesListRoute,
+    roleCreateRoute,
+    roleDetailsRoute,
+    roleEditRoute,
+    permissionsRoute,
   ]),
 ]);
 
