@@ -116,6 +116,10 @@ const loginRoute = createRoute({
   getParentRoute: () => authLayoutRoute,
   path: '/login',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) {
+      return;
+    }
+
     // If already authenticated, bypass login and redirect to dashboard
     if (context.auth.isAuthenticated) {
       if (context.auth.user?.must_change_password) {
@@ -141,6 +145,10 @@ const dashboardLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'dashboard',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) {
+      return;
+    }
+
     // Guard: Force redirect to login if not authenticated
     if (!context.auth.isAuthenticated) {
       throw redirect({ to: '/login' });
@@ -298,6 +306,10 @@ const usersListRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/users',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) {
+      return;
+    }
+
     if (!context.auth.hasPermission('users:view')) {
       throw redirect({ to: '/unauthorized' });
     }
@@ -310,6 +322,10 @@ const userCreateRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/users/new',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) {
+      return;
+    }
+
     if (!context.auth.hasPermission('users:create')) {
       throw redirect({ to: '/unauthorized' });
     }
@@ -322,6 +338,10 @@ const userDetailsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/users/$userId',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) {
+      return;
+    }
+
     if (!context.auth.hasPermission('users:view')) {
       throw redirect({ to: '/unauthorized' });
     }
@@ -334,6 +354,10 @@ const userEditRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/users/$userId/edit',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) {
+      return;
+    }
+
     if (!context.auth.hasPermission('users:update')) {
       throw redirect({ to: '/unauthorized' });
     }
@@ -346,6 +370,10 @@ const rolesListRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/roles',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) {
+      return;
+    }
+
     if (!context.auth.hasPermission('roles:view')) {
       throw redirect({ to: '/unauthorized' });
     }
@@ -358,6 +386,10 @@ const roleCreateRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/roles/new',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) {
+      return;
+    }
+
     if (!context.auth.hasPermission('roles:create')) {
       throw redirect({ to: '/unauthorized' });
     }
@@ -370,6 +402,10 @@ const roleDetailsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/roles/$roleId',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) {
+      return;
+    }
+
     if (!context.auth.hasPermission('roles:view')) {
       throw redirect({ to: '/unauthorized' });
     }
@@ -382,6 +418,10 @@ const roleEditRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/roles/$roleId/edit',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) {
+      return;
+    }
+
     if (!context.auth.hasPermission('roles:update')) {
       throw redirect({ to: '/unauthorized' });
     }
@@ -394,6 +434,10 @@ const permissionsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/permissions',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) {
+      return;
+    }
+
     if (!context.auth.hasPermission('permissions:view')) {
       throw redirect({ to: '/unauthorized' });
     }
@@ -406,6 +450,10 @@ const changePasswordRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/change-password',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) {
+      return;
+    }
+
     if (!context.auth.isAuthenticated) {
       throw redirect({ to: '/login' });
     }
@@ -444,6 +492,10 @@ const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) {
+      return;
+    }
+
     if (context.auth.isAuthenticated) {
       if (context.auth.user?.must_change_password) {
         throw redirect({ to: '/change-password' });

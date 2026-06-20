@@ -11,6 +11,23 @@ import { router } from './routes/router';
 // Inner component to dynamically inject auth state into TanStack Router context
 const AppRouter = () => {
   const auth = useAuth();
+
+  if (auth.isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white">
+        <div className="relative flex items-center justify-center">
+          <div className="animate-ping absolute inline-flex h-16 w-16 rounded-full bg-brand-500 opacity-75" />
+          <div className="relative rounded-full h-12 w-12 bg-brand-600 flex items-center justify-center font-bold text-lg shadow-lg">
+            EQ
+          </div>
+        </div>
+        <p className="mt-6 text-slate-400 text-sm tracking-wider uppercase font-semibold animate-pulse">
+          Restoring session...
+        </p>
+      </div>
+    );
+  }
+
   return <RouterProvider router={router} context={{ auth }} />;
 };
 

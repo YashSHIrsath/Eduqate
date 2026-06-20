@@ -2,6 +2,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
 class Settings(BaseSettings):
+    # Application Environment
+    APP_ENV: str = Field("development", validation_alias="APP_ENV")
+
     # PostgreSQL Connection URL
     DATABASE_URL: str = Field(..., validation_alias="DATABASE_URL")
     
