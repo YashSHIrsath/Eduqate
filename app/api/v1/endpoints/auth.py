@@ -1,11 +1,11 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, Request, Header, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Header, status, Response, Cookie
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
 from app.core.database import get_db
-from app.schemas.auth import UserRegister, UserLogin, TokenResponse, UserResponse
+from app.schemas.auth import UserRegister, UserLogin, TokenResponse, UserResponse, UserBootstrapResponse
 from app.dependencies.auth import get_current_user
 from app.models.user import User
 
@@ -77,6 +77,7 @@ def register(
 def login(
     payload: UserLogin,
     request: Request,
+    response: Response,
     auth_service: AuthService = Depends(get_auth_service)
 ):
     metadata = get_request_metadata(request)
@@ -90,7 +91,21 @@ def login(
             device_name=metadata["device_name"],
             request_id=metadata["request_id"]
         )
-        return tokens
+        
+        # Set httponly secure cookie for refresh token
+        response.set_cookie(
+            key="refresh_token",
+            value=tokens["refresh_token"],
+            httponly=True,
+            secure=True,
+            samesite="strict",
+            max_age=7 * 24 * 3600  # 7 days
+        )
+        
+        return {
+            "access_token": tokens["access_token"],
+            "token_type": "bearer"
+        }
     except ValueError as e:
         # Check if the error is lockout related to return a specific 423 Locked or 403 Forbidden
         err_msg = str(e)
@@ -100,39 +115,77 @@ def login(
 
 @router.post("/refresh", response_model=TokenResponse)
 def refresh(
-    payload: RefreshRequest,
     request: Request,
+    response: Response,
+    refresh_token: Optional[str] = Cookie(None),
     auth_service: AuthService = Depends(get_auth_service)
 ):
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired or invalid. Please sign in again."
+        )
+
     metadata = get_request_metadata(request)
     try:
         tokens = auth_service.refresh_session(
-            raw_refresh_token=payload.refresh_token,
+            raw_refresh_token=refresh_token,
             ip_address=metadata["ip_address"],
             user_agent=metadata["user_agent"],
             device_name=metadata["device_name"],
             request_id=metadata["request_id"]
         )
-        return tokens
+        
+        # Set updated rotated refresh token in secure cookie
+        response.set_cookie(
+            key="refresh_token",
+            value=tokens["refresh_token"],
+            httponly=True,
+            secure=True,
+            samesite="strict",
+            max_age=7 * 24 * 3600  # 7 days
+        )
+        
+        return {
+            "access_token": tokens["access_token"],
+            "token_type": "bearer"
+        }
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
 @router.post("/logout")
 def logout(
-    payload: LogoutRequest,
     request: Request,
+    response: Response,
+    refresh_token: Optional[str] = Cookie(None),
     auth_service: AuthService = Depends(get_auth_service)
 ):
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Session cookie not found."
+        )
+
     metadata = get_request_metadata(request)
     success = auth_service.logout_session(
-        raw_refresh_token=payload.refresh_token,
+        raw_refresh_token=refresh_token,
         ip_address=metadata["ip_address"],
         user_agent=metadata["user_agent"],
         request_id=metadata["request_id"]
     )
+    
+    # Clear the refresh token cookie
+    response.delete_cookie(
+        key="refresh_token",
+        httponly=True,
+        secure=True,
+        samesite="strict"
+    )
+    
     if not success:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Session not found or already logged out.")
     return {"message": "Logged out successfully"}
+
 
 @router.post("/logout-all")
 def logout_all(
@@ -151,3 +204,32 @@ def logout_all(
         "message": "Logged out from all devices successfully",
         "sessions_revoked": revoked_count
     }
+
+@router.get("/me", response_model=UserBootstrapResponse)
+def get_me(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    metadata = get_request_metadata(request)
+    return auth_service.get_bootstrap_data(
+        user=current_user,
+        ip_address=metadata["ip_address"],
+        user_agent=metadata["user_agent"],
+        request_id=metadata["request_id"]
+    )
+
+@router.get("/permissions", response_model=List[str])
+def get_permissions(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    metadata = get_request_metadata(request)
+    return auth_service.get_effective_permissions(
+        user=current_user,
+        ip_address=metadata["ip_address"],
+        user_agent=metadata["user_agent"],
+        request_id=metadata["request_id"]
+    )
+

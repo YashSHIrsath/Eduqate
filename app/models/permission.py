@@ -11,6 +11,8 @@ class Permission(Base, AuditMixin):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(100), unique=True, nullable=False, index=True)
     description = Column(String(255), nullable=True)
+    category = Column(String(100), nullable=False, default="General")
+
     
     # System permission check: true for built-in/non-modifiable permissions
     is_system_permission = Column(Boolean, nullable=False, default=False)

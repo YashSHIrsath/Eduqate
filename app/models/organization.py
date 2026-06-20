@@ -15,6 +15,6 @@ class Organization(Base, AuditMixin):
     status = Column(String(50), nullable=False, default="active")
 
     # Relationships
-    users = relationship("User", back_populates="organization", cascade="all, delete-orphan")
+    users = relationship("User", back_populates="organization", cascade="all, delete-orphan", foreign_keys="[User.organization_id]")
     roles = relationship("Role", back_populates="organization", cascade="all, delete-orphan")
     audit_logs = relationship("AuditLog", back_populates="organization")
