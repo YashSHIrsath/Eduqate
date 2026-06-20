@@ -66,7 +66,18 @@ Copy the template configuration file to create your local environment file:
   ```
 Open the newly created `.env` file in your editor and adjust any configuration settings as needed.
 
+### 6. Database Configuration
+The application is pre-configured to connect to a PostgreSQL database. Ensure you set the `DATABASE_URL` in your `.env` file.
+
+* **Connection format**:
+  ```env
+  DATABASE_URL=postgresql://[username]:[password]@[host]:[port]/[database]
+  ```
+* **Special Characters in Passwords**: If your password contains special characters (like `@`, `:`, `/`, etc.), you must URL-encode them. For example, `@` becomes `%40`.
+* **Testing Connections**: Once configured, you can verify connection health by visiting the `/api/health` route.
+
 ---
+
 
 ## Running the Application
 
