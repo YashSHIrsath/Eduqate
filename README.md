@@ -81,12 +81,53 @@ The application is pre-configured to connect to a PostgreSQL database. Ensure yo
 
 ## Running the Application
 
-Start the Uvicorn development server:
-```bash
-uvicorn app.main:app --reload
-```
+You can run the app locally with Uvicorn (Python) or with Docker.
 
-The server will start on **`http://127.0.0.1:8000`** and will automatically reload whenever you make changes to the code.
+- Run with Uvicorn (local development):
+  ```bash
+  uvicorn app.main:app --reload
+  ```
+  The server will start on http://127.0.0.1:8000. Use `/docs` for the Swagger UI.
+
+- Run with Docker (recommended for development using your Dockerfile):
+  Prerequisite: Docker Desktop must be installed and running.
+
+  From the project root (`Eduqate`):
+
+  Build the image using the project's Dockerfile:
+  ```bash
+  docker build -t eduqate:latest .
+  ```
+
+  Run the built image:
+  ```bash
+  docker run --rm -p 8000:8000 --env-file .env eduqate:latest
+  ```
+
+  Or use docker-compose (build + run):
+  ```bash
+  docker compose up --build
+  # or run detached
+  docker compose up --build -d
+  ```
+
+  Stop and remove containers created by compose:
+  ```bash
+  docker compose down
+  ```
+
+  Notes:
+  - In development we use `--reload` so Uvicorn will auto-reload on code changes.
+  - In the browser, use http://localhost:8000 or http://127.0.0.1:8000. Do not use `0.0.0.0` in the browser address bar.
+  - If you get a warning about `version` in `docker-compose.yml` being obsolete, remove the `version:` line from that file to avoid the warning.
+  - To view logs:
+    ```bash
+    docker compose logs -f web
+    ```
+
+- Production recommendations:
+  - Build a reproducible image in CI and push to a registry.
+  - Do not use bind mounts or `--reload` in production. Run Uvicorn without `--reload` or use a production server like Gunicorn with Uvicorn workers.
 
 ---
 
