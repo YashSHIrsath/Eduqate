@@ -13,12 +13,12 @@
 
 * [x] User Model
 * [x] Password Hashing
-* [ ] Registration
-* [ ] Login
-* [ ] Access Token
-* [ ] Refresh Token
-* [ ] Logout
-* [ ] Token Revocation
+* [x] Registration
+* [x] Login
+* [x] Access Token
+* [x] Refresh Token
+* [x] Logout
+* [x] Token Revocation
 
 ### Authorization
 
@@ -47,7 +47,7 @@
 ### Audit Logs
 
 * [x] Audit Log Table
-* [ ] User Action Logging
+* [x] User Action Logging
 
 ---
 
