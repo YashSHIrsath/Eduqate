@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from '@tanstack/react-router';
 import { getRole } from '../api/roles';
-import { getPermissionsCatalog } from '../../permissions/api/permissions';
 import { getUsers } from '../../users/api/users';
 import { useAuth } from '../../auth';
 import {

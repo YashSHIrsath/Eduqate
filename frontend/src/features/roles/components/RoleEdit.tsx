@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useParams, useNavigate } from '@tanstack/react-router';
+import { Link, useParams } from '@tanstack/react-router';
 import { getRole, updateRole, assignPermissionsToRole } from '../api/roles';
 import { getPermissionsCatalog } from '../../permissions/api/permissions';
 import {
@@ -25,7 +25,6 @@ type RoleEditFormData = z.infer<typeof roleEditSchema>;
 
 export const RoleEdit: React.FC = () => {
   const { roleId } = useParams({ from: '/dashboard/roles/$roleId/edit' });
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'details' | 'permissions'>('details');
   const [selectedPermIds, setSelectedPermIds] = useState<Set<string>>(new Set());
@@ -233,7 +232,6 @@ export const RoleEdit: React.FC = () => {
             <>
               {Object.entries(permCatalog || {}).map(([category, perms]: [string, any]) => {
                 const allSelected = perms.every((p: any) => selectedPermIds.has(p.id));
-                const someSelected = perms.some((p: any) => selectedPermIds.has(p.id));
 
                 return (
                   <div key={category} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">

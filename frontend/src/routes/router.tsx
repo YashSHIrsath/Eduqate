@@ -55,7 +55,7 @@ const withSuspense = (LazyComponent: React.LazyExoticComponent<React.FC>) => {
       <LazyComponent />
     </Suspense>
   );
-  SuspenseWrapped.displayName = `Suspense(${LazyComponent.displayName || 'LazyComponent'})`;
+  SuspenseWrapped.displayName = 'SuspenseWrappedRoute';
   return SuspenseWrapped;
 };
 

@@ -12,4 +12,3 @@ router.include_router(permissions_router)
 router.include_router(users_router)
 router.include_router(dashboard_router)
 
-
