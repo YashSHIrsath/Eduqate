@@ -7,39 +7,66 @@ from app.seeders.roles import seed_system_roles
 
 logger = logging.getLogger("eduqate.bootstrap")
 
+
 def bootstrap_system(db: Session) -> bool:
     """
     Bootstraps the platform with standard permissions, roles, and seed version tracking.
+    Each version block is idempotent and runs only once.
     """
     logger.info("Initializing system bootstrap...")
-    
-    # Version 1: Initial permissions catalog and default Super Admin role setup
-    version_1 = db.query(SeedVersion).filter(SeedVersion.version == 1).first()
-    
-    if not version_1:
+    ran_any = False
+
+    # ------------------------------------------------------------------
+    # Version 1: Core permissions + Super Admin role
+    # ------------------------------------------------------------------
+    if not db.query(SeedVersion).filter(SeedVersion.version == 1).first():
         try:
-            logger.info("Applying Seed Version 1: Seeding core system permissions...")
+            logger.info("Applying Seed Version 1: core permissions and Super Admin role...")
             seed_permissions(db)
-            
-            # Seed default system roles for any pre-existing organizations
+
             organizations = db.query(Organization).filter(Organization.deleted_at == None).all()
             for org in organizations:
-                logger.info(f"Seeding default roles for organization: {org.name} ({org.slug})")
+                logger.info(f"Seeding Super Admin role for: {org.name}")
                 seed_system_roles(db, org.id)
-            
-            # Save seed run version in DB
-            record = SeedVersion(
-                version=1,
-                name="Initial permissions & Super Admin role setup"
-            )
-            db.add(record)
+
+            db.add(SeedVersion(version=1, name="Initial permissions & Super Admin role setup"))
             db.commit()
-            logger.info("Seed Version 1 applied successfully!")
-            return True
+            logger.info("Seed Version 1 applied successfully.")
+            ran_any = True
         except Exception as e:
             db.rollback()
-            logger.error(f"Error during Seed Version 1 application: {e}")
-            raise e
+            logger.error(f"Seed Version 1 failed: {e}")
+            raise
+
     else:
-        logger.info("Seed Version 1 is already applied. Skipping...")
-        return False
+        logger.info("Seed Version 1 already applied. Skipping.")
+
+    # ------------------------------------------------------------------
+    # Version 2: Persona architecture — Headmaster, Teacher, Student roles
+    # ------------------------------------------------------------------
+    if not db.query(SeedVersion).filter(SeedVersion.version == 2).first():
+        try:
+            logger.info("Applying Seed Version 2: persona system roles and expanded permissions...")
+
+            # Sync expanded permission catalog (adds new teacher/student permissions)
+            seed_permissions(db)
+
+            # Seed / update all four system roles per organization
+            organizations = db.query(Organization).filter(Organization.deleted_at == None).all()
+            for org in organizations:
+                logger.info(f"Seeding persona system roles for: {org.name}")
+                seed_system_roles(db, org.id)
+
+            db.add(SeedVersion(version=2, name="Persona architecture: Headmaster, Teacher, Student system roles"))
+            db.commit()
+            logger.info("Seed Version 2 applied successfully.")
+            ran_any = True
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Seed Version 2 failed: {e}")
+            raise
+
+    else:
+        logger.info("Seed Version 2 already applied. Skipping.")
+
+    return ran_any

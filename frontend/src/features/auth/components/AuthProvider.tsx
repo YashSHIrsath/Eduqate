@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { apiClient, setAccessToken } from '../../../lib/api-client';
-import type { User, Organization, Role, AuthContextType } from '../types';
+import type { User, Organization, Role, AuthContextType, PersonaType } from '../types';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -13,20 +13,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserData = useCallback(async () => {
     try {
-      // 1. Fetch profile bootstrap data
       const meResponse = await apiClient.get('/api/v1/auth/me');
       const { user: userData, organization: orgData, roles: rolesData } = meResponse.data;
-      
+
       setUser(userData);
       setOrganization(orgData);
       setRoles(rolesData);
 
-      // 2. Fetch effective permission names
       const permsResponse = await apiClient.get('/api/v1/auth/permissions');
       setPermissions(permsResponse.data);
     } catch (error) {
       console.error('Failed to fetch authenticated user metadata:', error);
-      // Clear session state on bootstrap failure
       setUser(null);
       setOrganization(null);
       setRoles([]);
@@ -37,13 +34,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshSession = useCallback(async () => {
     try {
-      // Execute silent refresh request. secure httpOnly cookie sent automatically by browser.
       const response = await apiClient.post('/api/v1/auth/refresh');
       const { access_token } = response.data;
-      
       setAccessToken(access_token);
-      
-      // Load user profile & permissions with the new access token
       await fetchUserData();
     } catch (error) {
       // Catch expected 401s for unauthenticated users silently on boot
@@ -60,13 +53,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
         organization_slug: organizationSlug,
       });
-
       const { access_token } = response.data;
-      
-      // Store access token in memory
       setAccessToken(access_token);
-
-      // Fetch bootstrap profile data
       await fetchUserData();
     } catch (error) {
       setIsLoading(false);
@@ -79,12 +67,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     setIsLoading(true);
     try {
-      // Server will delete the secure cookie automatically
       await apiClient.post('/api/v1/auth/logout');
     } catch (error) {
       console.error('Failed to execute backend logout:', error);
     } finally {
-      // Ensure local state is wiped regardless of backend response status
       setUser(null);
       setOrganization(null);
       setRoles([]);
@@ -95,19 +81,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const hasPermission = useCallback((permissionName: string): boolean => {
-    // Super Admin role bypasses permission checks (has full access)
-    const isSuperAdmin = roles.some(role => role.name === 'Super Admin');
+    const isSuperAdmin = user?.persona_type === 'super_admin';
     if (isSuperAdmin) return true;
-    
     return permissions.includes(permissionName);
-  }, [roles, permissions]);
+  }, [user, permissions]);
 
-  // Execute silent refresh on application mount
+  const hasPersona = useCallback((...personas: PersonaType[]): boolean => {
+    if (!user) return false;
+    return personas.includes(user.persona_type);
+  }, [user]);
+
   useEffect(() => {
     refreshSession();
   }, [refreshSession]);
 
-  // Clean up session if an expired token is intercepted
   useEffect(() => {
     const handleSessionExpired = () => {
       setUser(null);
@@ -128,12 +115,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     organization,
     roles,
     permissions,
+    persona: user?.persona_type ?? null,
     isAuthenticated: !!user,
     isLoading,
     login,
     logout,
     hasPermission,
+    hasPersona,
     refreshSession,
+    refreshProfile: fetchUserData,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

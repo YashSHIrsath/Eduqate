@@ -117,6 +117,7 @@ def get_user_details(
         "id": user.id,
         "organization_id": user.organization_id,
         "email": user.email,
+        "persona_type": user.persona_type,
         "status": user.status,
         "must_change_password": user.must_change_password,
         "created_at": user.created_at,
@@ -163,9 +164,10 @@ def create_user(
     new_user = User(
         email=payload.email,
         hashed_password=hashed_password,
+        persona_type=payload.persona_type,
         organization_id=current_user.organization_id,
         status="active",
-        must_change_password=True  # Force change on first login
+        must_change_password=True,
     )
     new_user.roles = roles
     created_user = user_repo.create(new_user)
@@ -305,15 +307,19 @@ def assign_roles_to_user(
         )
 
     role_repo = RoleRepository(db)
-    success = role_repo.update_user_roles(
-        user_id=user_id,
-        role_ids=payload.role_ids,
-        organization_id=current_user.organization_id
-    )
+    try:
+        success = role_repo.update_user_roles(
+            user_id=user_id,
+            role_ids=payload.role_ids,
+            organization_id=current_user.organization_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to assign roles. Verify that all role IDs are valid and belong to the organization."
+            detail="Failed to assign roles. Verify that all role IDs are valid and belong to the organization.",
         )
 
     # Audit log

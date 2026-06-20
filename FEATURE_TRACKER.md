@@ -47,6 +47,25 @@
 * [x] Permission Decorators
 * [x] Endpoint Protection
 
+### Persona Architecture
+
+* [x] PersonaType enum (SUPER_ADMIN, HEADMASTER, TEACHER, STUDENT)
+* [x] `persona_type` column on `users` table (migration + backfill)
+* [x] `persona_type` column on `roles` table (migration + backfill)
+* [x] Seed Version 2 — four immutable system roles with correct persona + permissions
+* [x] Bootstrap lifespan event (startup auto-seeds on every deploy)
+* [x] Cross-persona role assignment validation (ValueError → HTTP 400)
+* [x] `RequiresPersona` FastAPI dependency (Gate 1 — portal access)
+* [x] Admin API router (`/api/v1/admin/*` — SUPER_ADMIN + HEADMASTER)
+* [x] Teacher API router (`/api/v1/teacher/*` — TEACHER)
+* [x] Student API router (`/api/v1/student/*` — STUDENT)
+* [x] Frontend `PersonaType` type + `persona` / `hasPersona()` in AuthProvider
+* [x] AdministrationLayout (blue/brand-600 theme)
+* [x] TeacherLayout (emerald theme)
+* [x] StudentLayout (violet theme)
+* [x] Three-portal TanStack Router — persona guards + permission guards per route
+* [x] Post-login redirect by persona (`/administration/dashboard`, `/teacher/dashboard`, `/student/dashboard`)
+
 ### Audit Logs
 
 * [x] Audit Log Table

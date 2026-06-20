@@ -21,7 +21,7 @@ const passwordChangeSchema = z
 type PasswordChangeValues = z.infer<typeof passwordChangeSchema>;
 
 export const ForcedPasswordChange: React.FC = () => {
-  const { refreshSession } = useAuth();
+  const { refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -44,14 +44,10 @@ export const ForcedPasswordChange: React.FC = () => {
         new_password: values.newPassword,
       });
       setIsSuccess(true);
-      
-      // Refresh auth context session to clear the must_change_password flag
-      await refreshSession();
-      
-      // Delay navigation slightly to let the user see the success screen
+      await refreshProfile();
       setTimeout(() => {
-        navigate({ to: '/dashboard' });
-      }, 2000);
+        navigate({ to: '/' });
+      }, 1500);
     } catch (err: any) {
       console.error('Password change failed:', err);
       const detail = err.response?.data?.detail || 'Failed to update password. Verify your current password.';
@@ -82,18 +78,14 @@ export const ForcedPasswordChange: React.FC = () => {
   return (
     <div className="min-h-screen gradient-dark flex items-center justify-center p-4">
       <div className="w-full max-w-md p-8 rounded-2xl border border-white/20 shadow-2xl glass-panel relative overflow-hidden">
-        {/* Decorative background glows */}
         <div className="absolute -top-12 -left-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl pointer-events-none" />
 
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center p-3 bg-gradient-to-tr from-amber-500 to-orange-500 rounded-xl shadow-lg mb-4 text-white">
             <KeyRound className="h-6 w-6" />
           </div>
-          <h2 className="text-xl font-bold bg-gradient-to-r from-slate-850 to-slate-900 bg-clip-text text-slate-800">
-            Security Password Update
-          </h2>
+          <h2 className="text-xl font-bold text-slate-800">Security Password Update</h2>
           <p className="text-xs text-slate-500 mt-2 leading-relaxed">
             First login detected. For compliance and account safety, you are required to change your temporary password before proceeding.
           </p>
@@ -110,7 +102,6 @@ export const ForcedPasswordChange: React.FC = () => {
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          {/* Current Password */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
               Temporary / Current Password
@@ -128,7 +119,6 @@ export const ForcedPasswordChange: React.FC = () => {
             )}
           </div>
 
-          {/* New Password */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
               New Password
@@ -146,7 +136,6 @@ export const ForcedPasswordChange: React.FC = () => {
             )}
           </div>
 
-          {/* Confirm Password */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
               Confirm New Password

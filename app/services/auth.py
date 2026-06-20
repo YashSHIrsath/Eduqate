@@ -16,6 +16,7 @@ from app.services.token import TokenService
 from app.models.user import User
 from app.models.organization import Organization
 from app.models.refresh_token import RefreshToken
+from app.core.constants import PersonaType
 
 class AuthService:
     def __init__(
@@ -109,8 +110,10 @@ class AuthService:
         user = User(
             email=email,
             hashed_password=hashed_password,
+            # First user bootstrapped via /auth/register is always the platform Super Admin
+            persona_type=PersonaType.SUPER_ADMIN,
             organization_id=org.id,
-            status="active"
+            status="active",
         )
         
         # If this is the first user, assign them to the Super Admin role

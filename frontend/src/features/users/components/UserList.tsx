@@ -20,8 +20,7 @@ export const UserList: React.FC = () => {
   const { hasPermission } = useAuth();
   const canCreateUsers = hasPermission('users:create');
   const canUpdateUsers = hasPermission('users:update');
-  
-  // Table search and pagination state
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState('');
@@ -30,13 +29,11 @@ export const UserList: React.FC = () => {
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // Fetch roles list for filters
   const { data: roles = [] } = useQuery({
     queryKey: ['roles'],
     queryFn: getRolesList,
   });
 
-  // Fetch paginated users
   const { data, isLoading } = useQuery({
     queryKey: ['users', page, pageSize, search, statusFilter, roleFilter, sortBy, sortOrder],
     queryFn: () =>
@@ -82,7 +79,7 @@ export const UserList: React.FC = () => {
         if (row.status === 'active') badgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-100';
         if (row.status === 'inactive') badgeStyle = 'bg-slate-100 text-slate-600 border-slate-200';
         if (row.status === 'suspended') badgeStyle = 'bg-red-50 text-red-700 border-red-100';
-        
+
         return (
           <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${badgeStyle}`}>
             {row.status}
@@ -102,7 +99,7 @@ export const UserList: React.FC = () => {
       render: (row) => (
         <div className="flex items-center gap-2">
           <button
-            onClick={() => navigate({ to: '/users/$userId', params: { userId: row.id } })}
+            onClick={() => navigate({ to: '/administration/users/$userId', params: { userId: row.id } as any })}
             className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
             title="View Details"
           >
@@ -110,7 +107,7 @@ export const UserList: React.FC = () => {
           </button>
           {canUpdateUsers && (
             <button
-              onClick={() => navigate({ to: '/users/$userId/edit', params: { userId: row.id } })}
+              onClick={() => navigate({ to: '/administration/users/$userId/edit', params: { userId: row.id } as any })}
               className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
               title="Edit Profile"
             >
@@ -124,13 +121,9 @@ export const UserList: React.FC = () => {
 
   const filterComponent = (
     <div className="flex gap-2">
-      {/* Status Filter */}
       <select
         value={statusFilter}
-        onChange={(e) => {
-          setStatusFilter(e.target.value);
-          setPage(1);
-        }}
+        onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
         className="bg-white border border-slate-200 text-xs font-semibold rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-brand-100 focus:border-brand-500 transition-all"
       >
         <option value="">All Statuses</option>
@@ -139,27 +132,20 @@ export const UserList: React.FC = () => {
         <option value="suspended">Suspended</option>
       </select>
 
-      {/* Role Filter */}
       <select
         value={roleFilter}
-        onChange={(e) => {
-          setRoleFilter(e.target.value);
-          setPage(1);
-        }}
+        onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
         className="bg-white border border-slate-200 text-xs font-semibold rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-brand-100 focus:border-brand-500 transition-all"
       >
         <option value="">All Roles</option>
         {roles.map((role: any) => (
-          <option key={role.id} value={role.id}>
-            {role.name}
-          </option>
+          <option key={role.id} value={role.id}>{role.name}</option>
         ))}
       </select>
 
-      {/* Create User Button */}
       {canCreateUsers && (
         <button
-          onClick={() => navigate({ to: '/users/new' })}
+          onClick={() => navigate({ to: '/administration/users/new' })}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-white gradient-brand shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.98] transition-all text-xs cursor-pointer"
         >
           <UserPlus className="h-4 w-4" />
@@ -191,10 +177,7 @@ export const UserList: React.FC = () => {
         onSortChange={handleSortChange}
         isLoading={isLoading}
         search={search}
-        onSearchChange={(val) => {
-          setSearch(val);
-          setPage(1);
-        }}
+        onSearchChange={(val) => { setSearch(val); setPage(1); }}
         searchPlaceholder="Search by user email..."
         filterComponent={filterComponent}
       />

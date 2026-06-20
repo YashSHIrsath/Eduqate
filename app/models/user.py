@@ -26,7 +26,10 @@ class User(Base, AuditMixin):
     
     email = Column(String(255), nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
-    
+
+    # Persona determines which portal this user enters
+    persona_type = Column(String(50), nullable=False)
+
     # Replaces is_active: e.g. "active", "inactive", "suspended"
     status = Column(String(50), nullable=False, default="active")
     must_change_password = Column(Boolean, nullable=False, default=False)

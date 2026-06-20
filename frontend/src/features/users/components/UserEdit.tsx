@@ -3,96 +3,107 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from '@tanstack/react-router';
 import { getUser, updateUser, updateUserRoles, updateUserPermissions, getRolesList, getPermissionsCatalog } from '../api/users';
 import { ArrowLeft, User, Shield, KeyRound, CheckCircle2, ShieldAlert, RefreshCw } from 'lucide-react';
+import type { PersonaType } from '../../auth/types';
+
+const PERSONAS: { value: PersonaType; label: string; description: string }[] = [
+  { value: 'super_admin', label: 'Super Admin', description: 'Unrestricted platform access' },
+  { value: 'headmaster',  label: 'Headmaster',  description: 'School administrator portal' },
+  { value: 'teacher',     label: 'Teacher',     description: 'Educator portal access' },
+  { value: 'student',     label: 'Student',     description: 'Learner portal access' },
+];
 
 export const UserEdit: React.FC = () => {
-  const { userId } = useParams({ from: '/dashboard/users/$userId/edit' });
+  const { userId } = useParams({ from: '/administration/users/$userId/edit' });
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'profile' | 'roles' | 'permissions'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'access' | 'permissions'>('profile');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // 1. Fetch user data
   const { data: userDetail, isLoading: userLoading } = useQuery({
     queryKey: ['user-detail', userId],
     queryFn: () => getUser(userId),
   });
 
-  // 2. Fetch roles
   const { data: roles = [] } = useQuery({
     queryKey: ['roles'],
     queryFn: getRolesList,
   });
 
-  // 3. Fetch permissions catalog
   const { data: permissionsCatalog = {} } = useQuery({
     queryKey: ['permissions-catalog'],
     queryFn: getPermissionsCatalog,
   });
 
-  // Local Form States
   const [email, setEmail] = useState('');
+  const [selectedPersona, setSelectedPersona] = useState<PersonaType>('super_admin');
+  const [originalPersona, setOriginalPersona] = useState<PersonaType>('super_admin');
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
 
   useEffect(() => {
     if (userDetail) {
       setEmail(userDetail.email);
+      const persona = userDetail.persona_type as PersonaType;
+      setSelectedPersona(persona);
+      setOriginalPersona(persona);
       setSelectedRoles(userDetail.roles.map((r: any) => r.id));
-      // In UserDetailResponse, userDetail.permissions contains the user's *effective* permissions.
-      // But wait! Direct overrides is what we want to edit.
-      // Wait, does userDetail also return direct user overrides, or does get_user_permissions return effective permissions?
-      // In GET /api/v1/users/{user_id}, we returned:
-      // "permissions": effective_permissions
-      // Wait, is it fine to toggle them directly as direct permissions override?
-      // Yes! In this phase, we map direct permissions by toggling.
-      // Let's check if the target has direct permissions.
-      // Let's filter userDetail.permissions to find overrides, or simply treat the selected ones as overrides.
-      // For simplicity, let's load the permissions that are directly assigned.
-      // Wait, the API GET /{user_id} returned `permissions` = `effective_permissions`.
-      // If we save it, we can save direct overrides. Let's see: we can populate selectedPermissions from the user's permissions!
       setSelectedPermissions(userDetail.permissions.map((p: any) => p.id));
     }
   }, [userDetail]);
 
-  // Mutations
+  // When persona changes, clear role selection since old roles won't match new persona
+  const handlePersonaChange = (persona: PersonaType) => {
+    setSelectedPersona(persona);
+    setSelectedRoles([]);
+  };
+
+  const filteredRoles = (roles as any[]).filter(
+    (role) => role.persona_type === selectedPersona
+  );
+
   const updateProfileMutation = useMutation({
     mutationFn: (newEmail: string) => updateUser(userId, { email: newEmail }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-detail', userId] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      showSuccess('Profile settings updated successfully.');
+      showSuccess('Profile settings updated.');
     },
     onError: (err: any) => showErr(err.response?.data?.detail || 'Profile update failed.'),
   });
 
-  const updateRolesMutation = useMutation({
-    mutationFn: (roleIds: string[]) => updateUserRoles(userId, roleIds),
+  const updateAccessMutation = useMutation({
+    mutationFn: async ({ persona, roleIds }: { persona: PersonaType; roleIds: string[] }) => {
+      // Persona must be saved BEFORE roles — backend enforces persona match on role assignment
+      if (persona !== originalPersona) {
+        await updateUser(userId, { persona_type: persona });
+      }
+      await updateUserRoles(userId, roleIds);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-detail', userId] });
-      showSuccess('User roles synchronized successfully.');
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      setOriginalPersona(selectedPersona);
+      showSuccess('Persona and role assignments updated.');
     },
-    onError: (err: any) => showErr(err.response?.data?.detail || 'Role sync failed.'),
+    onError: (err: any) => showErr(err.response?.data?.detail || 'Access update failed.'),
   });
 
   const updatePermissionsMutation = useMutation({
     mutationFn: (permissionIds: string[]) => updateUserPermissions(userId, permissionIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-detail', userId] });
-      showSuccess('User direct permission overrides synchronized successfully.');
+      showSuccess('Direct permission overrides updated.');
     },
-    onError: (err: any) => showErr(err.response?.data?.detail || 'Permission override update failed.'),
+    onError: (err: any) => showErr(err.response?.data?.detail || 'Permission update failed.'),
   });
 
   const showSuccess = (msg: string) => {
-    setSuccessMsg(msg);
-    setErrorMsg(null);
+    setSuccessMsg(msg); setErrorMsg(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => setSuccessMsg(null), 3000);
   };
-
   const showErr = (msg: string) => {
-    setErrorMsg(msg);
-    setSuccessMsg(null);
+    setErrorMsg(msg); setSuccessMsg(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -100,31 +111,17 @@ export const UserEdit: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
         <RefreshCw className="h-8 w-8 text-brand-500 animate-spin" />
-        <span>Loading edit console...</span>
+        <span>Loading editor...</span>
       </div>
     );
   }
 
-  // Toggle handlers
-  const handleRoleToggle = (roleId: string) => {
-    setSelectedRoles((prev) =>
-      prev.includes(roleId) ? prev.filter((id) => id !== roleId) : [...prev, roleId]
-    );
-  };
-
-  const handlePermissionToggle = (permId: string) => {
-    setSelectedPermissions((prev) =>
-      prev.includes(permId) ? prev.filter((id) => id !== permId) : [...prev, permId]
-    );
-  };
-
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center">
         <Link
-          to="/users/$userId"
-          params={{ userId }}
+          to="/administration/users/$userId"
+          params={{ userId } as any}
           className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -138,7 +135,6 @@ export const UserEdit: React.FC = () => {
           <span>{successMsg}</span>
         </div>
       )}
-
       {errorMsg && (
         <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm flex gap-3 items-center">
           <ShieldAlert className="h-5 w-5 text-red-500 shrink-0" />
@@ -146,54 +142,30 @@ export const UserEdit: React.FC = () => {
         </div>
       )}
 
-      {/* Main Console Box */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[400px]">
-        {/* Tab Headers */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
         <div className="flex border-b border-slate-200 bg-slate-50/50 shrink-0">
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`px-6 py-4.5 font-bold text-sm border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'profile'
-                ? 'border-brand-500 text-brand-600 bg-white'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <User className="h-4.5 w-4.5" />
-            Profile Settings
-          </button>
-          <button
-            onClick={() => setActiveTab('roles')}
-            className={`px-6 py-4.5 font-bold text-sm border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'roles'
-                ? 'border-brand-500 text-brand-600 bg-white'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Shield className="h-4.5 w-4.5" />
-            User Roles
-          </button>
-          <button
-            onClick={() => setActiveTab('permissions')}
-            className={`px-6 py-4.5 font-bold text-sm border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === 'permissions'
-                ? 'border-brand-500 text-brand-600 bg-white'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <KeyRound className="h-4.5 w-4.5" />
-            Direct Overrides
-          </button>
+          {(['profile', 'access', 'permissions'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-6 py-4 font-bold text-sm border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === tab ? 'border-brand-500 text-brand-600 bg-white' : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              {tab === 'profile' && <User className="h-4 w-4" />}
+              {tab === 'access' && <Shield className="h-4 w-4" />}
+              {tab === 'permissions' && <KeyRound className="h-4 w-4" />}
+              {tab === 'profile' ? 'Profile Settings' : tab === 'access' ? 'Persona & Roles' : 'Direct Overrides'}
+            </button>
+          ))}
         </div>
 
-        {/* Tab body */}
-        <div className="p-8 flex-1">
-          {/* TAB 1: PROFILE */}
+        <div className="p-8">
+          {/* ── Profile ─────────────────────────────────────── */}
           {activeTab === 'profile' && (
             <div className="space-y-6 max-w-xl">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                  Email Address
-                </label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Email Address</label>
                 <input
                   type="email"
                   value={email}
@@ -206,74 +178,160 @@ export const UserEdit: React.FC = () => {
                 disabled={updateProfileMutation.isPending}
                 className="px-5 py-3 rounded-xl font-semibold text-white gradient-brand shadow-md hover:shadow-lg transition-all text-xs cursor-pointer disabled:opacity-50"
               >
-                {updateProfileMutation.isPending ? 'Saving...' : 'Save Settings'}
+                {updateProfileMutation.isPending ? 'Saving...' : 'Save Profile'}
               </button>
             </div>
           )}
 
-          {/* TAB 2: ROLES */}
-          {activeTab === 'roles' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {roles.map((role: any) => {
-                  const isChecked = selectedRoles.includes(role.id);
-                  return (
-                    <div
-                      key={role.id}
-                      onClick={() => handleRoleToggle(role.id)}
-                      className={`p-4 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-3 ${
-                        isChecked
-                          ? 'border-brand-500 bg-brand-50/20 shadow-sm'
-                          : 'border-slate-100 bg-slate-50/30 hover:bg-slate-50/80'
-                      }`}
-                    >
-                      <div className={`mt-0.5 h-4 w-4 shrink-0 rounded border flex items-center justify-center transition-all ${
-                        isChecked ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300 bg-white'
-                      }`}>
-                        {isChecked && (
-                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-                      <div>
-                        <span className="font-semibold text-slate-800 text-xs block">{role.name}</span>
-                        <span className="text-[10px] text-slate-400 block mt-0.5">{role.description}</span>
-                      </div>
-                    </div>
-                  );
-                })}
+          {/* ── Persona & Roles ──────────────────────────────── */}
+          {activeTab === 'access' && (
+            <div className="space-y-8 max-w-3xl">
+
+              {/* Section 1 — Persona */}
+              <div>
+                <div className="mb-4">
+                  <h3 className="text-sm font-bold text-slate-800">Portal Access (Persona)</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Determines which portal this user can enter. Only one persona is allowed.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {PERSONAS.map((p) => {
+                    const isSelected = selectedPersona === p.value;
+                    return (
+                      <label
+                        key={p.value}
+                        className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all select-none ${
+                          isSelected
+                            ? 'border-brand-500 bg-brand-50/30 shadow-sm'
+                            : 'border-slate-200 bg-slate-50/30 hover:bg-slate-50/80'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="persona"
+                          value={p.value}
+                          checked={isSelected}
+                          onChange={() => handlePersonaChange(p.value)}
+                          className="mt-0.5 accent-brand-600 h-4 w-4 shrink-0"
+                        />
+                        <div>
+                          <span className={`font-semibold text-sm block ${isSelected ? 'text-brand-700' : 'text-slate-800'}`}>
+                            {p.label}
+                          </span>
+                          <span className="text-[10px] text-slate-400 mt-0.5 block">{p.description}</span>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+                {selectedPersona !== originalPersona && (
+                  <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-3">
+                    Changing persona will reassign the user to the <strong>{selectedPersona}</strong> portal. All existing role assignments will be cleared.
+                  </p>
+                )}
               </div>
+
+              {/* Divider */}
+              <div className="border-t border-slate-100" />
+
+              {/* Section 2 — Roles */}
+              <div>
+                <div className="mb-4">
+                  <h3 className="text-sm font-bold text-slate-800">
+                    Organization Roles
+                    <span className="ml-2 text-xs font-normal text-slate-400">
+                      — showing roles for <span className="font-semibold text-slate-600">{selectedPersona}</span>
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Roles determine what actions this user can perform within their portal.
+                  </p>
+                </div>
+
+                {filteredRoles.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-xl">
+                    <Shield className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                    <p className="text-sm font-semibold text-slate-500">No roles configured for this persona</p>
+                    <p className="text-xs mt-1">Create roles with persona_type = <span className="font-mono">{selectedPersona}</span></p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {filteredRoles.map((role: any) => {
+                      const isChecked = selectedRoles.includes(role.id);
+                      return (
+                        <div
+                          key={role.id}
+                          onClick={() =>
+                            setSelectedRoles(prev =>
+                              prev.includes(role.id)
+                                ? prev.filter(id => id !== role.id)
+                                : [...prev, role.id]
+                            )
+                          }
+                          className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer select-none transition-all ${
+                            isChecked
+                              ? 'border-indigo-500 bg-indigo-50/20 shadow-sm'
+                              : 'border-slate-200 bg-slate-50/30 hover:bg-slate-50/80'
+                          }`}
+                        >
+                          <div className={`mt-0.5 h-4 w-4 shrink-0 rounded border flex items-center justify-center transition-all ${
+                            isChecked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white'
+                          }`}>
+                            {isChecked && (
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-slate-800 text-xs block truncate">{role.name}</span>
+                              {role.is_system_role && (
+                                <span className="text-[8px] uppercase font-bold text-brand-600 tracking-wider bg-brand-50 px-1 py-0.5 rounded border border-brand-100 shrink-0">System</span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-slate-400 block mt-0.5 truncate">{role.description}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               <button
-                onClick={() => updateRolesMutation.mutate(selectedRoles)}
-                disabled={updateRolesMutation.isPending}
+                onClick={() => updateAccessMutation.mutate({ persona: selectedPersona, roleIds: selectedRoles })}
+                disabled={updateAccessMutation.isPending}
                 className="px-5 py-3 rounded-xl font-semibold text-white gradient-brand shadow-md hover:shadow-lg transition-all text-xs cursor-pointer disabled:opacity-50"
               >
-                {updateRolesMutation.isPending ? 'Syncing...' : 'Save User Roles'}
+                {updateAccessMutation.isPending ? 'Saving...' : 'Save Persona & Roles'}
               </button>
             </div>
           )}
 
-          {/* TAB 3: DIRECT OVERRIDES */}
+          {/* ── Direct Permission Overrides ──────────────────── */}
           {activeTab === 'permissions' && (
             <div className="space-y-6">
               <div className="space-y-8">
                 {Object.keys(permissionsCatalog).map((category) => (
                   <div key={category} className="space-y-3">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1.5">
-                      {category}
-                    </h4>
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1.5">{category}</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {permissionsCatalog[category].map((perm: any) => {
+                      {(permissionsCatalog as any)[category].map((perm: any) => {
                         const isChecked = selectedPermissions.includes(perm.id);
                         return (
                           <div
                             key={perm.id}
-                            onClick={() => handlePermissionToggle(perm.id)}
+                            onClick={() =>
+                              setSelectedPermissions(prev =>
+                                prev.includes(perm.id)
+                                  ? prev.filter(id => id !== perm.id)
+                                  : [...prev, perm.id]
+                              )
+                            }
                             className={`p-3 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-3 ${
-                              isChecked
-                                ? 'border-indigo-500 bg-indigo-50/20 shadow-sm'
-                                : 'border-slate-100 bg-slate-50/30 hover:bg-slate-50/80'
+                              isChecked ? 'border-indigo-500 bg-indigo-50/20 shadow-sm' : 'border-slate-100 bg-slate-50/30 hover:bg-slate-50/80'
                             }`}
                           >
                             <div className={`mt-0.5 h-4 w-4 shrink-0 rounded border flex items-center justify-center transition-all ${
