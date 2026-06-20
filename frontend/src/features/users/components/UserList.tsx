@@ -4,6 +4,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { getUsers, getRolesList } from '../api/users';
 import { DataTable } from '../../../components/ui/data-table';
 import type { Column } from '../../../components/ui/data-table';
+import { useAuth } from '../../auth';
 import { UserPlus, Eye, Edit, AlertTriangle } from 'lucide-react';
 
 interface UserRow {
@@ -16,6 +17,9 @@ interface UserRow {
 
 export const UserList: React.FC = () => {
   const navigate = useNavigate();
+  const { hasPermission } = useAuth();
+  const canCreateUsers = hasPermission('users:create');
+  const canUpdateUsers = hasPermission('users:update');
   
   // Table search and pagination state
   const [page, setPage] = useState(1);
@@ -104,13 +108,15 @@ export const UserList: React.FC = () => {
           >
             <Eye className="h-4 w-4" />
           </button>
-          <button
-            onClick={() => navigate({ to: '/users/$userId/edit', params: { userId: row.id } })}
-            className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
-            title="Edit Profile"
-          >
-            <Edit className="h-4 w-4" />
-          </button>
+          {canUpdateUsers && (
+            <button
+              onClick={() => navigate({ to: '/users/$userId/edit', params: { userId: row.id } })}
+              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+              title="Edit Profile"
+            >
+              <Edit className="h-4 w-4" />
+            </button>
+          )}
         </div>
       ),
     },
@@ -151,13 +157,15 @@ export const UserList: React.FC = () => {
       </select>
 
       {/* Create User Button */}
-      <button
-        onClick={() => navigate({ to: '/users/new' })}
-        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-white gradient-brand shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.98] transition-all text-xs cursor-pointer"
-      >
-        <UserPlus className="h-4 w-4" />
-        Create User
-      </button>
+      {canCreateUsers && (
+        <button
+          onClick={() => navigate({ to: '/users/new' })}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-white gradient-brand shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.98] transition-all text-xs cursor-pointer"
+        >
+          <UserPlus className="h-4 w-4" />
+          Create User
+        </button>
+      )}
     </div>
   );
 

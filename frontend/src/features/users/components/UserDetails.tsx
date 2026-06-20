@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams, useNavigate } from '@tanstack/react-router';
 import { getUser, updateUserStatus } from '../api/users';
+import { useAuth } from '../../auth';
 import { ArrowLeft, Edit, Shield, KeyRound, User as UserIcon, Calendar, CheckCircle2, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
 
 export const UserDetails: React.FC = () => {
   const { userId } = useParams({ from: '/dashboard/users/$userId' });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { hasPermission } = useAuth();
+  const canUpdateUsers = hasPermission('users:update');
   const [activeTab, setActiveTab] = useState<'roles' | 'permissions'>('roles');
   const [statusError, setStatusError] = useState<string | null>(null);
 
@@ -74,13 +77,15 @@ export const UserDetails: React.FC = () => {
           <ArrowLeft className="h-4 w-4" />
           Back to User List
         </Link>
-        <button
-          onClick={() => navigate({ to: '/users/$userId/edit', params: { userId } })}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] transition-all text-xs cursor-pointer shadow-sm"
-        >
-          <Edit className="h-4 w-4" />
-          Edit User Profile
-        </button>
+        {canUpdateUsers && (
+          <button
+            onClick={() => navigate({ to: '/users/$userId/edit', params: { userId } })}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] transition-all text-xs cursor-pointer shadow-sm"
+          >
+            <Edit className="h-4 w-4" />
+            Edit User Profile
+          </button>
+        )}
       </div>
 
       {statusError && (
@@ -153,48 +158,50 @@ export const UserDetails: React.FC = () => {
           </div>
 
           {/* Quick Actions Panel */}
-          <div className="pt-6 border-t border-slate-100 space-y-2.5">
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Status Management</h4>
-            <button
-              onClick={handleStatusToggle}
-              disabled={statusMutation.isPending}
-              className={`w-full py-2.5 rounded-xl font-semibold text-xs transition-all border flex items-center justify-center gap-2 cursor-pointer ${
-                userDetail.status === 'active'
-                  ? 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
-              }`}
-            >
-              {userDetail.status === 'active' ? (
-                <>
-                  <XCircle className="h-4 w-4" /> Deactivate Account
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4" /> Activate Account
-                </>
-              )}
-            </button>
+          {canUpdateUsers && (
+            <div className="pt-6 border-t border-slate-100 space-y-2.5">
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Status Management</h4>
+              <button
+                onClick={handleStatusToggle}
+                disabled={statusMutation.isPending}
+                className={`w-full py-2.5 rounded-xl font-semibold text-xs transition-all border flex items-center justify-center gap-2 cursor-pointer ${
+                  userDetail.status === 'active'
+                    ? 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                }`}
+              >
+                {userDetail.status === 'active' ? (
+                  <>
+                    <XCircle className="h-4 w-4" /> Deactivate Account
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" /> Activate Account
+                  </>
+                )}
+              </button>
 
-            <button
-              onClick={handleSuspendToggle}
-              disabled={statusMutation.isPending}
-              className={`w-full py-2.5 rounded-xl font-semibold text-xs transition-all border flex items-center justify-center gap-2 cursor-pointer ${
-                userDetail.status === 'suspended'
-                  ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
-                  : 'bg-red-50 hover:bg-red-100 text-red-700 border-red-200'
-              }`}
-            >
-              {userDetail.status === 'suspended' ? (
-                <>
-                  <CheckCircle2 className="h-4 w-4" /> Lift Suspension
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="h-4 w-4" /> Suspend Account
-                </>
-              )}
-            </button>
-          </div>
+              <button
+                onClick={handleSuspendToggle}
+                disabled={statusMutation.isPending}
+                className={`w-full py-2.5 rounded-xl font-semibold text-xs transition-all border flex items-center justify-center gap-2 cursor-pointer ${
+                  userDetail.status === 'suspended'
+                    ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                    : 'bg-red-50 hover:bg-red-100 text-red-700 border-red-200'
+                }`}
+              >
+                {userDetail.status === 'suspended' ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" /> Lift Suspension
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-4 w-4" /> Suspend Account
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Right Tabbed Access Panel */}
