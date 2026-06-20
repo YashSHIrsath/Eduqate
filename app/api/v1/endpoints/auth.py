@@ -5,6 +5,7 @@ from typing import Optional, List
 from pydantic import BaseModel
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.schemas.auth import UserRegister, UserLogin, TokenResponse, UserResponse, UserBootstrapResponse
 from app.dependencies.auth import get_current_user
 from app.models.user import User
@@ -19,6 +20,10 @@ from app.services.token import TokenService
 from app.services.auth import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+def should_use_secure_cookie() -> bool:
+    """Use Secure cookies outside local HTTP development."""
+    return settings.APP_ENV.lower() not in {"development", "dev", "local", "test"}
 
 class RefreshRequest(BaseModel):
     refresh_token: str
@@ -97,7 +102,7 @@ def login(
             key="refresh_token",
             value=tokens["refresh_token"],
             httponly=True,
-            secure=True,
+            secure=should_use_secure_cookie(),
             samesite="strict",
             max_age=7 * 24 * 3600  # 7 days
         )
@@ -141,7 +146,7 @@ def refresh(
             key="refresh_token",
             value=tokens["refresh_token"],
             httponly=True,
-            secure=True,
+            secure=should_use_secure_cookie(),
             samesite="strict",
             max_age=7 * 24 * 3600  # 7 days
         )
@@ -178,7 +183,7 @@ def logout(
     response.delete_cookie(
         key="refresh_token",
         httponly=True,
-        secure=True,
+        secure=should_use_secure_cookie(),
         samesite="strict"
     )
     
@@ -232,4 +237,3 @@ def get_permissions(
         user_agent=metadata["user_agent"],
         request_id=metadata["request_id"]
     )
-
