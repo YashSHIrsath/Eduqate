@@ -96,6 +96,29 @@ FastAPI automatically generates interactive API documentation. Once the server i
 * **Swagger UI (Interactive Docs):** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 * **ReDoc:** [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 
+---
+
+## Syncing & Updating (For Contributors)
+
+Whenever new updates are pushed, follow these steps to keep your local workspace synchronized:
+
+1. **Pull the latest changes**:
+   ```bash
+   git pull origin main
+   ```
+2. **Activate your virtual environment**:
+   * Windows: `.\venv\Scripts\Activate.ps1`
+   * macOS/Linux: `source venv/bin/activate`
+3. **Install updated dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. **Apply database migrations**:
+   Make sure your local `.env` is configured with a valid `DATABASE_URL`, then run:
+   ```bash
+   alembic upgrade head
+   ```
+
 # Contributors
 - Yashraj Deshmukh
-- Yash Shirsath
+- Yash Shirsath
