@@ -5,6 +5,7 @@ from app.models.role import Role, role_permissions
 from app.models.permission import Permission
 from app.models.refresh_token import RefreshToken
 from app.models.audit_log import AuditLog
+from app.models.seed_version import SeedVersion
 
 __all__ = [
     "Base",
@@ -17,5 +18,7 @@ __all__ = [
     "role_permissions",
     "Permission",
     "RefreshToken",
-    "AuditLog"
+    "AuditLog",
+    "SeedVersion"
 ]
+

@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Integer, DateTime, UUID, ForeignKey, Table, UniqueConstraint
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, UUID, ForeignKey, Table, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.models.base import Base, AuditMixin
 
@@ -29,6 +29,8 @@ class User(Base, AuditMixin):
     
     # Replaces is_active: e.g. "active", "inactive", "suspended"
     status = Column(String(50), nullable=False, default="active")
+    must_change_password = Column(Boolean, nullable=False, default=False)
+
 
     # Security Tracking Fields
     failed_login_attempts = Column(Integer, nullable=False, default=0)
@@ -42,7 +44,7 @@ class User(Base, AuditMixin):
     )
 
     # Relationships
-    organization = relationship("Organization", back_populates="users")
+    organization = relationship("Organization", back_populates="users", foreign_keys=[organization_id])
     roles = relationship("Role", secondary=user_roles, back_populates="users")
     permissions = relationship("Permission", secondary=user_permissions, back_populates="users")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")

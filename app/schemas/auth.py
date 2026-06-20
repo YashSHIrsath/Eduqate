@@ -1,8 +1,10 @@
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
 import re
+from app.schemas.role import RoleResponse
+from app.schemas.permission import PermissionResponse
 
 def email_validator(value: str) -> str:
     """Helper to validate basic email format without external dependencies."""
@@ -33,15 +35,35 @@ class UserLogin(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
-    refresh_token: str
+    refresh_token: Optional[str] = None
     token_type: str = "bearer"
+
 
 class UserResponse(BaseModel):
     id: UUID
     organization_id: Optional[UUID]
     email: str
     status: str
+    must_change_password: bool
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class OrganizationResponse(BaseModel):
+    id: UUID
+    name: str
+    code: str
+    slug: str
+    status: str
+
+    class Config:
+        from_attributes = True
+
+class UserBootstrapResponse(BaseModel):
+    user: UserResponse
+    organization: Optional[OrganizationResponse] = None
+    roles: List[RoleResponse] = []
+    permissions: List[PermissionResponse] = []
+

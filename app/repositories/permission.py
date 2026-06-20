@@ -97,3 +97,38 @@ class PermissionRepository(BaseRepository[Permission]):
                 self.db.commit()
                 return True
         return False
+
+    def update_role_permissions(self, role_id: UUID, permission_ids: List[UUID]) -> bool:
+        """Replace the current permissions of a role with the provided list of permission IDs."""
+        role = self.db.query(Role).filter(Role.id == role_id, Role.deleted_at == None).first()
+        if not role:
+            return False
+
+        # Fetch permissions
+        permissions = self.db.query(Permission).filter(
+            Permission.id.in_(permission_ids),
+            Permission.deleted_at == None
+        ).all()
+
+        role.permissions = permissions
+        self.db.commit()
+        self.db.refresh(role)
+        return True
+
+    def update_user_permissions(self, user_id: UUID, permission_ids: List[UUID]) -> bool:
+        """Replace direct permissions of a user with the provided list of permission IDs."""
+        user = self.db.query(User).filter(User.id == user_id, User.deleted_at == None).first()
+        if not user:
+            return False
+
+        # Fetch permissions
+        permissions = self.db.query(Permission).filter(
+            Permission.id.in_(permission_ids),
+            Permission.deleted_at == None
+        ).all()
+
+        user.permissions = permissions
+        self.db.commit()
+        self.db.refresh(user)
+        return True
+
