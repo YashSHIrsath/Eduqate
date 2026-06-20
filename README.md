@@ -95,3 +95,7 @@ The server will start on **`http://127.0.0.1:8000`** and will automatically relo
 FastAPI automatically generates interactive API documentation. Once the server is running, you can access it at:
 * **Swagger UI (Interactive Docs):** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 * **ReDoc:** [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+
+# Contributors
+- Yashraj Deshmukh
+- Yash Shirsath
