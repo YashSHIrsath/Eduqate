@@ -2,8 +2,10 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.core.database import get_db
+from app.api.v1.router import router as api_router
 
 app = FastAPI(title="Eduqate API")
+app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/")
 def read_root():
