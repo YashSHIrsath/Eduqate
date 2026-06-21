@@ -31,6 +31,49 @@ const PermissionsMatrix   = React.lazy(() => import('../features/permissions/com
 const TeacherDashboard    = React.lazy(() => import('../features/portal/components/TeacherDashboard').then(m => ({ default: m.TeacherDashboard })));
 const StudentDashboard    = React.lazy(() => import('../features/portal/components/StudentDashboard').then(m => ({ default: m.StudentDashboard })));
 
+// Academic Years
+const AcademicYearList    = React.lazy(() => import('../features/academic/components/AcademicYearList').then(m => ({ default: m.AcademicYearList })));
+const AcademicYearDetails = React.lazy(() => import('../features/academic/components/AcademicYearDetails').then(m => ({ default: m.AcademicYearDetails })));
+const AcademicYearCreate  = React.lazy(() => import('../features/academic/components/AcademicYearCreate').then(m => ({ default: m.AcademicYearCreate })));
+const AcademicYearEdit    = React.lazy(() => import('../features/academic/components/AcademicYearEdit').then(m => ({ default: m.AcademicYearEdit })));
+
+// Academic Terms
+const AcademicTermList    = React.lazy(() => import('../features/academic/components/AcademicTermList').then(m => ({ default: m.AcademicTermList })));
+const AcademicTermDetails = React.lazy(() => import('../features/academic/components/AcademicTermDetails').then(m => ({ default: m.AcademicTermDetails })));
+const AcademicTermCreate  = React.lazy(() => import('../features/academic/components/AcademicTermCreate').then(m => ({ default: m.AcademicTermCreate })));
+const AcademicTermEdit    = React.lazy(() => import('../features/academic/components/AcademicTermEdit').then(m => ({ default: m.AcademicTermEdit })));
+
+// Departments
+const DepartmentList      = React.lazy(() => import('../features/academic/components/DepartmentList').then(m => ({ default: m.DepartmentList })));
+const DepartmentDetails   = React.lazy(() => import('../features/academic/components/DepartmentDetails').then(m => ({ default: m.DepartmentDetails })));
+const DepartmentCreate    = React.lazy(() => import('../features/academic/components/DepartmentCreate').then(m => ({ default: m.DepartmentCreate })));
+const DepartmentEdit      = React.lazy(() => import('../features/academic/components/DepartmentEdit').then(m => ({ default: m.DepartmentEdit })));
+
+// Classes
+const ClassList           = React.lazy(() => import('../features/academic/components/ClassList').then(m => ({ default: m.ClassList })));
+const ClassDetails        = React.lazy(() => import('../features/academic/components/ClassDetails').then(m => ({ default: m.ClassDetails })));
+const ClassCreate         = React.lazy(() => import('../features/academic/components/ClassCreate').then(m => ({ default: m.ClassCreate })));
+const ClassEdit           = React.lazy(() => import('../features/academic/components/ClassEdit').then(m => ({ default: m.ClassEdit })));
+
+// Sections
+const SectionList         = React.lazy(() => import('../features/academic/components/SectionList').then(m => ({ default: m.SectionList })));
+const SectionDetails      = React.lazy(() => import('../features/academic/components/SectionDetails').then(m => ({ default: m.SectionDetails })));
+const SectionCreate       = React.lazy(() => import('../features/academic/components/SectionCreate').then(m => ({ default: m.SectionCreate })));
+const SectionEdit         = React.lazy(() => import('../features/academic/components/SectionEdit').then(m => ({ default: m.SectionEdit })));
+
+// Subjects
+const SubjectList         = React.lazy(() => import('../features/academic/components/SubjectList').then(m => ({ default: m.SubjectList })));
+const SubjectDetails      = React.lazy(() => import('../features/academic/components/SubjectDetails').then(m => ({ default: m.SubjectDetails })));
+const SubjectCreate       = React.lazy(() => import('../features/academic/components/SubjectCreate').then(m => ({ default: m.SubjectCreate })));
+const SubjectEdit         = React.lazy(() => import('../features/academic/components/SubjectEdit').then(m => ({ default: m.SubjectEdit })));
+
+// Teacher Assignments
+const TeacherAssignmentList    = React.lazy(() => import('../features/academic/components/TeacherAssignmentList').then(m => ({ default: m.TeacherAssignmentList })));
+const TeacherAssignmentDetails = React.lazy(() => import('../features/academic/components/TeacherAssignmentDetails').then(m => ({ default: m.TeacherAssignmentDetails })));
+const TeacherAssignmentCreate  = React.lazy(() => import('../features/academic/components/TeacherAssignmentCreate').then(m => ({ default: m.TeacherAssignmentCreate })));
+const TeacherAssignmentEdit    = React.lazy(() => import('../features/academic/components/TeacherAssignmentEdit').then(m => ({ default: m.TeacherAssignmentEdit })));
+
+
 import { Loader2, ShieldAlert } from 'lucide-react';
 
 const PORTAL_BY_PERSONA: Record<PersonaType, string> = {
@@ -325,6 +368,293 @@ const administrationPermissionsRoute = createRoute({
   component: withSuspense(PermissionsMatrix),
 });
 
+// Academic Years
+const administrationAcademicYearsRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/years',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('academic_years:view')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(AcademicYearList),
+});
+
+const administrationAcademicYearCreateRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/years/new',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('academic_years:create')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(AcademicYearCreate),
+});
+
+const administrationAcademicYearDetailsRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/years/$yearId',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('academic_years:view')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(AcademicYearDetails),
+});
+
+const administrationAcademicYearEditRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/years/$yearId/edit',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('academic_years:update')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(AcademicYearEdit),
+});
+
+// Academic Terms
+const administrationAcademicTermsRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/terms',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('academic_terms:view')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(AcademicTermList),
+});
+
+const administrationAcademicTermCreateRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/terms/new',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('academic_terms:create')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(AcademicTermCreate),
+});
+
+const administrationAcademicTermDetailsRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/terms/$termId',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('academic_terms:view')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(AcademicTermDetails),
+});
+
+const administrationAcademicTermEditRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/terms/$termId/edit',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('academic_terms:update')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(AcademicTermEdit),
+});
+
+// Departments
+const administrationDepartmentsRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/departments',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('departments:view')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(DepartmentList),
+});
+
+const administrationDepartmentCreateRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/departments/new',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('departments:create')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(DepartmentCreate),
+});
+
+const administrationDepartmentDetailsRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/departments/$deptId',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('departments:view')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(DepartmentDetails),
+});
+
+const administrationDepartmentEditRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/departments/$deptId/edit',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('departments:update')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(DepartmentEdit),
+});
+
+// Classes
+const administrationClassesRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/classes',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('classes:view')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(ClassList),
+});
+
+const administrationClassCreateRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/classes/new',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('classes:create')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(ClassCreate),
+});
+
+const administrationClassDetailsRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/classes/$classId',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('classes:view')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(ClassDetails),
+});
+
+const administrationClassEditRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/classes/$classId/edit',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('classes:update')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(ClassEdit),
+});
+
+// Sections
+const administrationSectionsRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/sections',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('sections:view')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(SectionList),
+});
+
+const administrationSectionCreateRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/sections/new',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('sections:create')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(SectionCreate),
+});
+
+const administrationSectionDetailsRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/sections/$sectionId',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('sections:view')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(SectionDetails),
+});
+
+const administrationSectionEditRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/sections/$sectionId/edit',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('sections:update')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(SectionEdit),
+});
+
+// Subjects
+const administrationSubjectsRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/subjects',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('subjects:view')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(SubjectList),
+});
+
+const administrationSubjectCreateRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/subjects/new',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('subjects:create')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(SubjectCreate),
+});
+
+const administrationSubjectDetailsRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/subjects/$subjectId',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('subjects:view')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(SubjectDetails),
+});
+
+const administrationSubjectEditRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/subjects/$subjectId/edit',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('subjects:update')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(SubjectEdit),
+});
+
+// Teacher Assignments
+const administrationTeacherAssignmentsRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/teachers/assignments',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('teacher_assignments:view')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(TeacherAssignmentList),
+});
+
+const administrationTeacherAssignmentCreateRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/teachers/assignments/new',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('teacher_assignments:create')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(TeacherAssignmentCreate),
+});
+
+const administrationTeacherAssignmentDetailsRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/teachers/assignments/$assignmentId',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('teacher_assignments:view')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(TeacherAssignmentDetails),
+});
+
+const administrationTeacherAssignmentEditRoute = createRoute({
+  getParentRoute: () => administrationLayoutRoute,
+  path: 'academic/teachers/assignments/$assignmentId/edit',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (!context.auth.hasPermission('teacher_assignments:update')) throw redirect({ to: '/unauthorized' });
+  },
+  component: withSuspense(TeacherAssignmentEdit),
+});
+
 // ---------------------------------------------------------------------------
 // Teacher Portal  (TEACHER)
 // ---------------------------------------------------------------------------
@@ -387,12 +717,55 @@ const routeTree = rootRoute.addChildren([
     administrationRoleDetailsRoute,
     administrationRoleEditRoute,
     administrationPermissionsRoute,
+    
+    // Academic Years
+    administrationAcademicYearsRoute,
+    administrationAcademicYearCreateRoute,
+    administrationAcademicYearDetailsRoute,
+    administrationAcademicYearEditRoute,
+    
+    // Academic Terms
+    administrationAcademicTermsRoute,
+    administrationAcademicTermCreateRoute,
+    administrationAcademicTermDetailsRoute,
+    administrationAcademicTermEditRoute,
+    
+    // Departments
+    administrationDepartmentsRoute,
+    administrationDepartmentCreateRoute,
+    administrationDepartmentDetailsRoute,
+    administrationDepartmentEditRoute,
+    
+    // Classes
+    administrationClassesRoute,
+    administrationClassCreateRoute,
+    administrationClassDetailsRoute,
+    administrationClassEditRoute,
+    
+    // Sections
+    administrationSectionsRoute,
+    administrationSectionCreateRoute,
+    administrationSectionDetailsRoute,
+    administrationSectionEditRoute,
+    
+    // Subjects
+    administrationSubjectsRoute,
+    administrationSubjectCreateRoute,
+    administrationSubjectDetailsRoute,
+    administrationSubjectEditRoute,
+    
+    // Teacher Assignments
+    administrationTeacherAssignmentsRoute,
+    administrationTeacherAssignmentCreateRoute,
+    administrationTeacherAssignmentDetailsRoute,
+    administrationTeacherAssignmentEditRoute,
   ]),
   teacherLayoutRoute.addChildren([teacherDashboardRoute]),
   studentLayoutRoute.addChildren([studentDashboardRoute]),
 ]);
 
 export const router = createRouter({
+
   routeTree,
   context: { auth: undefined! },
 });

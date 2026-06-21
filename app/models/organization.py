@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, UUID
+from sqlalchemy import Column, String, UUID, ForeignKey
 from sqlalchemy.orm import relationship
 from app.models.base import Base, AuditMixin
 
@@ -13,8 +13,13 @@ class Organization(Base, AuditMixin):
     
     # Status replaces is_active: e.g. "active", "inactive", "suspended"
     status = Column(String(50), nullable=False, default="active")
+    
+    # NEW fields for Academic Foundation
+    organization_type = Column(String(50), nullable=False, default="school")
+    current_academic_year_id = Column(UUID(as_uuid=True), ForeignKey("academic_years.id", ondelete="SET NULL", use_alter=True), nullable=True)
 
     # Relationships
     users = relationship("User", back_populates="organization", cascade="all, delete-orphan", foreign_keys="[User.organization_id]")
     roles = relationship("Role", back_populates="organization", cascade="all, delete-orphan")
     audit_logs = relationship("AuditLog", back_populates="organization")
+    current_academic_year = relationship("AcademicYear", foreign_keys=[current_academic_year_id], post_update=True)
