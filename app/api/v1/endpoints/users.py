@@ -73,6 +73,7 @@ def list_users(
     search: Optional[str] = None,
     status: Optional[str] = None,
     role_id: Optional[UUID] = None,
+    persona_type: Optional[str] = None,
     sort_by: str = "created_at",
     sort_order: str = "desc",
     current_user: User = Depends(RequiresPermission("users:view")),
@@ -85,6 +86,7 @@ def list_users(
         page_size=page_size,
         search=search,
         status=status,
+        persona_type=persona_type,
         role_id=role_id,
         sort_by=sort_by,
         sort_order=sort_order
@@ -95,6 +97,16 @@ def list_users(
         "page": page,
         "page_size": page_size
     }
+
+@router.get("/summary")
+def get_user_summary(
+    current_user: User = Depends(RequiresPermission("users:view")),
+    db: Session = Depends(get_db)
+):
+    """Returns user count breakdown by persona for summary cards."""
+    user_repo = UserRepository(db)
+    counts = user_repo.get_persona_counts(current_user.organization_id)
+    return counts
 
 @router.get("/{user_id}", response_model=UserDetailResponse)
 def get_user_details(
@@ -117,6 +129,8 @@ def get_user_details(
         "id": user.id,
         "organization_id": user.organization_id,
         "email": user.email,
+        "full_name": user.full_name,
+        "persona_type": user.persona_type,
         "status": user.status,
         "must_change_password": user.must_change_password,
         "created_at": user.created_at,
@@ -144,7 +158,7 @@ def create_user(
             detail="User with this email already exists in the organization."
         )
         
-    # Resolve roles and verify organization ownership
+    # Resolve roles, verify organization ownership, and enforce persona consistency
     roles = []
     for r_id in payload.role_ids:
         role = role_repo.get(r_id)
@@ -152,6 +166,11 @@ def create_user(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Role ID {r_id} not found in this organization."
+            )
+        if role.persona_type != payload.persona_type:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Role '{role.name}' belongs to persona '{role.persona_type}' which is inconsistent with selected user persona '{payload.persona_type}'."
             )
         roles.append(role)
         
@@ -162,10 +181,12 @@ def create_user(
     # Save new user
     new_user = User(
         email=payload.email,
+        full_name=payload.full_name,
         hashed_password=hashed_password,
+        persona_type=payload.persona_type,
         organization_id=current_user.organization_id,
         status="active",
-        must_change_password=True  # Force change on first login
+        must_change_password=True,
     )
     new_user.roles = roles
     created_user = user_repo.create(new_user)
@@ -210,6 +231,14 @@ def update_user(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already registered in this organization."
+            )
+            
+    if payload.persona_type and payload.persona_type != user.persona_type:
+        mismatched_roles = [r.name for r in user.roles if r.persona_type != payload.persona_type]
+        if mismatched_roles:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot change persona to '{payload.persona_type}'. The user has roles from their old persona: {', '.join(mismatched_roles)}. Remove these roles or change roles first."
             )
             
     updated_user = user_repo.update(user, payload)
@@ -305,15 +334,19 @@ def assign_roles_to_user(
         )
 
     role_repo = RoleRepository(db)
-    success = role_repo.update_user_roles(
-        user_id=user_id,
-        role_ids=payload.role_ids,
-        organization_id=current_user.organization_id
-    )
+    try:
+        success = role_repo.update_user_roles(
+            user_id=user_id,
+            role_ids=payload.role_ids,
+            organization_id=current_user.organization_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to assign roles. Verify that all role IDs are valid and belong to the organization."
+            detail="Failed to assign roles. Verify that all role IDs are valid and belong to the organization.",
         )
 
     # Audit log

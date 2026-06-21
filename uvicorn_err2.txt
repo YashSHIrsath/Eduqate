@@ -1,0 +1,8 @@
+INFO:eduqate.database:SQLAlchemy database engine initialized successfully.
+INFO:     Started server process [1616]
+INFO:     Waiting for application startup.
+INFO:eduqate.bootstrap:Initializing system bootstrap...
+INFO:eduqate.bootstrap:Seed Version 1 already applied. Skipping.
+INFO:eduqate.bootstrap:Seed Version 2 already applied. Skipping.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)

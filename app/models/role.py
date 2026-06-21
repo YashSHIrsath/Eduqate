@@ -17,11 +17,14 @@ class Role(Base, AuditMixin):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="RESTRICT"), nullable=True, index=True)
-    
+
     name = Column(String(100), nullable=False, index=True)
     description = Column(String(255), nullable=True)
-    
-    # System role check: true for core system roles like Super Admin
+
+    # Persona this role belongs to — immutable after creation
+    persona_type = Column(String(50), nullable=False)
+
+    # System role check: true for seeded roles that orgs cannot rename or delete
     is_system_role = Column(Boolean, nullable=False, default=False)
 
     # Unique Constraint per Organization

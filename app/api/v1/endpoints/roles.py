@@ -4,7 +4,6 @@ from typing import List
 from uuid import UUID
 
 from app.core.database import get_db
-from app.dependencies.auth import get_current_user
 from app.dependencies.permissions import RequiresPermission
 from app.models.user import User
 from app.models.role import Role
@@ -33,8 +32,9 @@ def create_role(
     role = Role(
         name=payload.name,
         description=payload.description,
+        persona_type=payload.persona_type,
         organization_id=current_user.organization_id,
-        is_system_role=False
+        is_system_role=False,
     )
     
     return role_repo.create(role)
@@ -44,11 +44,9 @@ def list_roles(
     current_user: User = Depends(RequiresPermission("roles:view")),
     db: Session = Depends(get_db)
 ):
-    role_repo = RoleRepository(db)
-    # Filter by user's organization
     roles = db.query(Role).filter(
         Role.organization_id == current_user.organization_id,
-        Role.deleted_at == None
+        Role.deleted_at == None,
     ).all()
     return roles
 

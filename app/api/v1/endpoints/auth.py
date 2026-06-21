@@ -112,11 +112,13 @@ def login(
             "token_type": "bearer"
         }
     except ValueError as e:
-        # Check if the error is lockout related to return a specific 423 Locked or 403 Forbidden
         err_msg = str(e)
-        if "locked" in err_msg:
+        if "locked" in err_msg.lower():
             raise HTTPException(status_code=status.HTTP_423_LOCKED, detail=err_msg)
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err_msg)
+        if "suspended" in err_msg.lower() or "inactive" in err_msg.lower():
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=err_msg)
+        # Default: credential errors → 401
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=err_msg)
 
 @router.post("/refresh", response_model=TokenResponse)
 def refresh(

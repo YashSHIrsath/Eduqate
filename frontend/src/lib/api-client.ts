@@ -60,6 +60,11 @@ apiClient.interceptors.response.use(
         return Promise.reject(error);
       }
 
+      // Login 401 means bad credentials — do NOT attempt token refresh
+      if (originalRequest.url === '/api/v1/auth/login') {
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });

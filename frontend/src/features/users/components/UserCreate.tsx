@@ -5,14 +5,25 @@ import { z } from 'zod';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { createUser, getRolesList } from '../api/users';
-import { ArrowLeft, ShieldCheck, Mail, ShieldAlert, Copy, Check, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Mail, User, ShieldAlert, Copy, Check, ArrowRight, Shield } from 'lucide-react';
 
 const userCreateSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
+  full_name: z.string().min(1, { message: 'Full name is required' }),
+  persona_type: z.enum(['super_admin', 'headmaster', 'teacher', 'student'], {
+    errorMap: () => ({ message: 'Select a persona type' }),
+  }),
   roleIds: z.array(z.string()).min(1, { message: 'Select at least one role' }),
 });
 
 type UserCreateValues = z.infer<typeof userCreateSchema>;
+
+const PERSONA_OPTIONS = [
+  { value: 'super_admin', label: 'Super Admin', desc: 'Manage organization settings, security, and global features.', color: 'text-violet-700', activeColor: 'border-violet-600 bg-violet-50/30 ring-2 ring-violet-100' },
+  { value: 'headmaster', label: 'Headmaster', desc: 'Oversee school schedules, staff directories, and academic programs.', color: 'text-blue-700', activeColor: 'border-blue-600 bg-blue-50/30 ring-2 ring-blue-100' },
+  { value: 'teacher', label: 'Teacher', desc: 'Design curriculum courses, manage student progress, and grade classes.', color: 'text-emerald-700', activeColor: 'border-emerald-600 bg-emerald-50/30 ring-2 ring-emerald-100' },
+  { value: 'student', label: 'Student', desc: 'Browse assignments, participate in class courses, and review results.', color: 'text-amber-700', activeColor: 'border-amber-600 bg-amber-50/30 ring-2 ring-amber-100' }
+] as const;
 
 export const UserCreate: React.FC = () => {
   const navigate = useNavigate();
@@ -20,7 +31,6 @@ export const UserCreate: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
 
-  // 1. Fetch organization roles to show in form
   const { data: roles = [], isLoading: rolesLoading } = useQuery({
     queryKey: ['roles'],
     queryFn: getRolesList,
@@ -34,36 +44,28 @@ export const UserCreate: React.FC = () => {
     formState: { errors },
   } = useForm<UserCreateValues>({
     resolver: zodResolver(userCreateSchema),
-    defaultValues: {
-      email: '',
-      roleIds: [],
-    },
+    defaultValues: { email: '', full_name: '', persona_type: undefined, roleIds: [] },
   });
 
   const selectedRoleIds = watch('roleIds') || [];
+  const selectedPersona = watch('persona_type');
 
   const handleRoleToggle = (roleId: string) => {
     if (selectedRoleIds.includes(roleId)) {
-      setValue('roleIds', selectedRoleIds.filter(id => id !== roleId));
+      setValue('roleIds', selectedRoleIds.filter(id => id !== roleId), { shouldValidate: true });
     } else {
-      setValue('roleIds', [...selectedRoleIds, roleId]);
+      setValue('roleIds', [...selectedRoleIds, roleId], { shouldValidate: true });
     }
   };
 
-  // 2. Create user mutation
   const createMutation = useMutation({
     mutationFn: createUser,
     onSuccess: (data) => {
-      setSuccessData({
-        email: data.user.email,
-        tempPass: data.temporary_password,
-        id: data.user.id,
-      });
+      setSuccessData({ email: data.user.email, tempPass: data.temporary_password, id: data.user.id });
       setErrorMsg(null);
     },
     onError: (err: any) => {
-      const msg = err.response?.data?.detail || 'Failed to create user.';
-      setErrorMsg(msg);
+      setErrorMsg(err.response?.data?.detail || 'Failed to create user.');
     },
   });
 
@@ -71,6 +73,8 @@ export const UserCreate: React.FC = () => {
     setErrorMsg(null);
     createMutation.mutate({
       email: values.email,
+      full_name: values.full_name,
+      persona_type: values.persona_type,
       role_ids: values.roleIds,
     });
   };
@@ -82,7 +86,10 @@ export const UserCreate: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Render Temporary Password Reveal Page
+  const personaRoles = (roles as any[]).filter(
+    (role) => role.persona_type === selectedPersona
+  );
+
   if (successData) {
     return (
       <div className="max-w-xl mx-auto space-y-6">
@@ -90,7 +97,6 @@ export const UserCreate: React.FC = () => {
           <div className="h-16 w-16 bg-emerald-50 text-emerald-500 border border-emerald-100 rounded-full flex items-center justify-center mx-auto shadow-inner">
             <ShieldCheck className="h-8 w-8" />
           </div>
-          
           <div>
             <h2 className="text-2xl font-bold text-slate-800">User Created Successfully!</h2>
             <p className="text-slate-500 text-sm mt-1.5">
@@ -98,7 +104,6 @@ export const UserCreate: React.FC = () => {
             </p>
           </div>
 
-          {/* Copyable Temporary Password Banner */}
           <div className="p-6 rounded-xl bg-slate-900 text-white space-y-4">
             <span className="text-[10px] uppercase font-bold text-brand-400 tracking-widest block">
               Temporary Security Password
@@ -114,13 +119,13 @@ export const UserCreate: React.FC = () => {
               </button>
             </div>
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              <strong>Security Warning:</strong> This password is system-generated and returned only **once**. It is never stored in plaintext and cannot be retrieved later. Copy and share it securely with the user.
+              <strong>Security Warning:</strong> This password is system-generated and returned only once. It is never stored in plaintext and cannot be retrieved later. Copy and share it securely with the user.
             </p>
           </div>
 
           <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
             <button
-              onClick={() => navigate({ to: '/users/$userId', params: { userId: successData.id } })}
+              onClick={() => navigate({ to: '/administration/users/$userId', params: { userId: successData.id } as any })}
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-white gradient-brand shadow-lg hover:shadow-xl hover:brightness-105 active:scale-[0.98] transition-all text-sm cursor-pointer"
             >
               Go to User Profile
@@ -134,10 +139,9 @@ export const UserCreate: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Back Button */}
       <div className="flex items-center">
         <Link
-          to="/users"
+          to="/administration/users"
           className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -145,7 +149,6 @@ export const UserCreate: React.FC = () => {
         </Link>
       </div>
 
-      {/* Main card */}
       <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
         <div className="border-b border-slate-100 pb-5 mb-6">
           <h2 className="text-xl font-bold text-slate-800">Add New User</h2>
@@ -159,60 +162,125 @@ export const UserCreate: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Email field */}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          {/* Top Section — Persona Type */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-              User Email Address
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+              1. Select Portal Access (Persona)
             </label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-400" />
-              <input
-                type="email"
-                placeholder="name@organization.com"
-                {...register('email')}
-                className={`w-full pl-11 pr-4 py-3 rounded-xl border bg-white/50 focus:bg-white transition-all text-sm outline-none ${
-                  errors.email ? 'border-red-400 focus:ring-2 focus:ring-red-200' : 'border-slate-200 focus:ring-2 focus:ring-brand-100 focus:border-brand-500'
-                }`}
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {PERSONA_OPTIONS.map((opt) => {
+                const isActive = selectedPersona === opt.value;
+                return (
+                  <div
+                    key={opt.value}
+                    onClick={() => {
+                      setValue('persona_type', opt.value, { shouldValidate: true });
+                      setValue('roleIds', [], { shouldValidate: true });
+                    }}
+                    className={`p-5 rounded-2xl border cursor-pointer select-none transition-all flex flex-col justify-between shadow-sm relative overflow-hidden ${
+                      isActive ? opt.activeColor : 'border-slate-200 bg-white hover:bg-slate-50/30'
+                    }`}
+                  >
+                    <div>
+                      <span className={`text-sm font-bold block ${isActive ? opt.color : 'text-slate-800'}`}>{opt.label}</span>
+                      <span className="text-xs text-slate-500 mt-2 block leading-relaxed">{opt.desc}</span>
+                    </div>
+                    {isActive && (
+                      <div className="absolute top-3 right-3 h-5 w-5 rounded-full bg-indigo-600 flex items-center justify-center text-white">
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            {errors.email && (
-              <p className="text-xs text-red-500 mt-1.5">{errors.email.message}</p>
-            )}
+            {errors.persona_type && <p className="text-xs text-red-500 mt-2 font-semibold">{errors.persona_type.message}</p>}
           </div>
 
-          {/* Roles Checklist */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
-              Assign Organization Roles
+          {/* Middle Section — User Details */}
+          <div className="space-y-4">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+              2. User Details
             </label>
-            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Full Name */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-2">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Jane Doe"
+                    {...register('full_name')}
+                    className={`w-full pl-11 pr-4 py-3 rounded-xl border bg-white/50 focus:bg-white transition-all text-sm outline-none ${
+                      errors.full_name ? 'border-red-400 focus:ring-2 focus:ring-red-200' : 'border-slate-200 focus:ring-2 focus:ring-brand-100 focus:border-brand-500'
+                    }`}
+                  />
+                </div>
+                {errors.full_name && <p className="text-xs text-red-500 mt-1.5 font-semibold">{errors.full_name.message}</p>}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                  <input
+                    type="email"
+                    placeholder="name@organization.com"
+                    {...register('email')}
+                    className={`w-full pl-11 pr-4 py-3 rounded-xl border bg-white/50 focus:bg-white transition-all text-sm outline-none ${
+                      errors.email ? 'border-red-400 focus:ring-2 focus:ring-red-200' : 'border-slate-200 focus:ring-2 focus:ring-brand-100 focus:border-brand-500'
+                    }`}
+                  />
+                </div>
+                {errors.email && <p className="text-xs text-red-500 mt-1.5 font-semibold">{errors.email.message}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Section — Roles Checklist */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+              3. Assign Organization Roles
+            </label>
             {rolesLoading ? (
-              <div className="text-center py-4 text-xs text-slate-400">Loading roles...</div>
-            ) : roles.length === 0 ? (
-              <div className="text-center py-4 text-xs text-slate-400">No roles configured for this organization.</div>
+              <div className="text-center py-8 text-xs text-slate-400">Loading roles...</div>
+            ) : !selectedPersona ? (
+              <div className="text-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                <Shield className="h-8 w-8 mx-auto mb-2 text-slate-300 animate-pulse" />
+                <p className="text-xs font-semibold text-slate-500">Please select a portal access persona first.</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Role choices will unlock and populate dynamically.</p>
+              </div>
+            ) : personaRoles.length === 0 ? (
+              <div className="text-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                <Shield className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                <p className="text-xs font-semibold text-slate-500">No roles configured for this persona type.</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Create roles with persona = "{selectedPersona}" under Role Settings.</p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {roles.map((role: any) => {
+                {personaRoles.map((role: any) => {
                   const isChecked = selectedRoleIds.includes(role.id);
                   return (
                     <div
                       key={role.id}
                       onClick={() => handleRoleToggle(role.id)}
                       className={`p-4 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-3 ${
-                        isChecked
-                          ? 'border-brand-500 bg-brand-50/20 shadow-sm'
-                          : 'border-slate-100 bg-slate-50/30 hover:bg-slate-50/80'
+                        isChecked ? 'border-brand-500 bg-brand-50/20 shadow-sm' : 'border-slate-100 bg-slate-50/30 hover:bg-slate-50/80'
                       }`}
                     >
                       <div className={`mt-0.5 h-4 w-4 shrink-0 rounded border flex items-center justify-center transition-all ${
                         isChecked ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300 bg-white'
                       }`}>
-                        {isChecked && (
-                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
+                        {isChecked && <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                       </div>
                       <div className="min-w-0">
                         <span className="font-semibold text-slate-800 text-xs block truncate">{role.name}</span>
@@ -223,16 +291,13 @@ export const UserCreate: React.FC = () => {
                 })}
               </div>
             )}
-            {errors.roleIds && (
-              <p className="text-xs text-red-500 mt-2">{errors.roleIds.message}</p>
-            )}
+            {errors.roleIds && <p className="text-xs text-red-500 mt-3 font-semibold">{errors.roleIds.message}</p>}
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={createMutation.isPending}
-            className="w-full py-3.5 rounded-xl font-semibold text-white gradient-brand shadow-lg hover:shadow-xl hover:brightness-105 active:scale-[0.99] transition-all disabled:opacity-50 disabled:pointer-events-none mt-4 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-3.5 rounded-xl font-semibold text-white gradient-brand shadow-lg hover:shadow-xl hover:brightness-105 active:scale-[0.99] transition-all disabled:opacity-50 disabled:pointer-events-none mt-4 flex items-center justify-center gap-2 cursor-pointer font-bold text-sm"
           >
             {createMutation.isPending ? 'Generating Temporary Credentials...' : 'Register User'}
           </button>

@@ -34,8 +34,11 @@ class BaseRepository(Generic[ModelType]):
 
     def update(self, db_obj: ModelType, obj_in) -> ModelType:
         """Update an existing database record."""
-        # Simple attribute update matching Pydantic schemas or dicts
-        update_data = obj_in if isinstance(obj_in, dict) else obj_in.__dict__
+        if isinstance(obj_in, dict):
+            update_data = obj_in
+        else:
+            # exclude_none so optional unset fields don't overwrite existing values with NULL
+            update_data = obj_in.model_dump(exclude_none=True)
         for field, value in update_data.items():
             if hasattr(db_obj, field):
                 setattr(db_obj, field, value)
