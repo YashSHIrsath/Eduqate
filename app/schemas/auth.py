@@ -46,6 +46,7 @@ class UserResponse(BaseModel):
     id: UUID
     organization_id: Optional[UUID]
     email: str
+    full_name: Optional[str] = None
     persona_type: str
     status: str
     must_change_password: bool

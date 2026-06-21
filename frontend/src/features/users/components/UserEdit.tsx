@@ -35,6 +35,7 @@ export const UserEdit: React.FC = () => {
   });
 
   const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
   const [selectedPersona, setSelectedPersona] = useState<PersonaType>('super_admin');
   const [originalPersona, setOriginalPersona] = useState<PersonaType>('super_admin');
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
@@ -43,6 +44,7 @@ export const UserEdit: React.FC = () => {
   useEffect(() => {
     if (userDetail) {
       setEmail(userDetail.email);
+      setFullName(userDetail.full_name || '');
       const persona = userDetail.persona_type as PersonaType;
       setSelectedPersona(persona);
       setOriginalPersona(persona);
@@ -62,7 +64,8 @@ export const UserEdit: React.FC = () => {
   );
 
   const updateProfileMutation = useMutation({
-    mutationFn: (newEmail: string) => updateUser(userId, { email: newEmail }),
+    mutationFn: ({ newEmail, newFullName }: { newEmail: string; newFullName: string }) =>
+      updateUser(userId, { email: newEmail, full_name: newFullName }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-detail', userId] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -74,7 +77,9 @@ export const UserEdit: React.FC = () => {
   const updateAccessMutation = useMutation({
     mutationFn: async ({ persona, roleIds }: { persona: PersonaType; roleIds: string[] }) => {
       // Persona must be saved BEFORE roles — backend enforces persona match on role assignment
+      // To avoid validation deadlock when changing persona, we first clear roles, update persona, and then assign new roles.
       if (persona !== originalPersona) {
+        await updateUserRoles(userId, []);
         await updateUser(userId, { persona_type: persona });
       }
       await updateUserRoles(userId, roleIds);
@@ -165,6 +170,16 @@ export const UserEdit: React.FC = () => {
           {activeTab === 'profile' && (
             <div className="space-y-6 max-w-xl">
               <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Full Name</label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Jane Doe"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-brand-100 focus:border-brand-500 transition-all"
+                />
+              </div>
+              <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Email Address</label>
                 <input
                   type="email"
@@ -174,7 +189,7 @@ export const UserEdit: React.FC = () => {
                 />
               </div>
               <button
-                onClick={() => updateProfileMutation.mutate(email)}
+                onClick={() => updateProfileMutation.mutate({ newEmail: email, newFullName: fullName })}
                 disabled={updateProfileMutation.isPending}
                 className="px-5 py-3 rounded-xl font-semibold text-white gradient-brand shadow-md hover:shadow-lg transition-all text-xs cursor-pointer disabled:opacity-50"
               >

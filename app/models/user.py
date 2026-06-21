@@ -25,6 +25,7 @@ class User(Base, AuditMixin):
     organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="RESTRICT"), nullable=True, index=True)
     
     email = Column(String(255), nullable=False, index=True)
+    full_name = Column(String(255), nullable=True)
     hashed_password = Column(String(255), nullable=False)
 
     # Persona determines which portal this user enters

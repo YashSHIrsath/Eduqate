@@ -5,6 +5,7 @@ export interface GetUsersParams {
   page_size?: number;
   search?: string;
   status?: string;
+  persona_type?: string;
   role_id?: string;
   sort_by?: string;
   sort_order?: 'asc' | 'desc';
@@ -15,17 +16,22 @@ export const getUsers = async (params: GetUsersParams) => {
   return response.data;
 };
 
+export const getUserSummary = async () => {
+  const response = await apiClient.get('/api/v1/admin/users/summary');
+  return response.data;
+};
+
 export const getUser = async (id: string) => {
   const response = await apiClient.get(`/api/v1/admin/users/${id}`);
   return response.data;
 };
 
-export const createUser = async (payload: { email: string; persona_type: string; role_ids: string[] }) => {
+export const createUser = async (payload: { email: string; full_name: string; persona_type: string; role_ids: string[] }) => {
   const response = await apiClient.post('/api/v1/admin/users', payload);
   return response.data;
 };
 
-export const updateUser = async (id: string, payload: { email?: string; persona_type?: string }) => {
+export const updateUser = async (id: string, payload: { email?: string; full_name?: string; persona_type?: string }) => {
   const response = await apiClient.put(`/api/v1/admin/users/${id}`, payload);
   return response.data;
 };

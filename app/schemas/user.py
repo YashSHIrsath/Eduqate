@@ -17,6 +17,7 @@ def email_validator(value: str) -> str:
 
 class UserCreate(BaseModel):
     email: str
+    full_name: str = Field(..., min_length=1)
     persona_type: PersonaType
     role_ids: List[UUID]
 
@@ -41,6 +42,7 @@ class UserCreateResponse(BaseModel):
 
 class UserUpdate(BaseModel):
     email: Optional[str] = Field(None, min_length=1)
+    full_name: Optional[str] = Field(None, min_length=1)
     persona_type: Optional[PersonaType] = None
 
     @field_validator("email")
@@ -77,6 +79,7 @@ class UserDetailResponse(BaseModel):
     id: UUID
     organization_id: Optional[UUID]
     email: str
+    full_name: Optional[str] = None
     persona_type: str
     status: str
     must_change_password: bool
@@ -88,8 +91,32 @@ class UserDetailResponse(BaseModel):
         from_attributes = True
 
 
+class RoleListItemResponse(BaseModel):
+    id: UUID
+    name: str
+    persona_type: str
+    is_system_role: bool
+
+    class Config:
+        from_attributes = True
+
+
+class UserListItemResponse(BaseModel):
+    id: UUID
+    email: str
+    full_name: Optional[str] = None
+    persona_type: str
+    status: str
+    must_change_password: bool
+    created_at: datetime
+    roles: List[RoleListItemResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
 class UserListResponse(BaseModel):
-    users: List[UserResponse]
+    users: List[UserListItemResponse]
     total: int
     page: int
     page_size: int

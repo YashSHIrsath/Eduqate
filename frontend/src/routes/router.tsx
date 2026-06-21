@@ -123,11 +123,11 @@ const loginRoute = createRoute({
     }
   },
   component: () => {
-    const { user, persona } = useAuth();
     const navigate = useNavigate();
 
-    const handleSuccess = () => {
-      if (user?.must_change_password) { navigate({ to: '/change-password' }); return; }
+    const handleSuccess = (freshUser: any) => {
+      if (freshUser?.must_change_password) { navigate({ to: '/change-password' }); return; }
+      const persona = freshUser?.persona_type as PersonaType;
       navigate({ to: persona ? PORTAL_BY_PERSONA[persona] : '/administration/dashboard' });
     };
 
@@ -154,27 +154,55 @@ const changePasswordRoute = createRoute({
 const unauthorizedRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/unauthorized',
-  component: () => (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
-      <div className="h-16 w-16 rounded-2xl bg-red-50 text-red-500 border border-red-100 flex items-center justify-center mb-6">
-        <ShieldAlert className="h-8 w-8" />
+  component: () => {
+    const { persona, isLoading } = useAuth();
+
+    if (isLoading) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center text-slate-400 gap-3">
+          <Loader2 className="h-8 w-8 text-brand-500 animate-spin" />
+          <span className="text-sm font-semibold">Loading authorization context...</span>
+        </div>
+      );
+    }
+
+    const dashboardLink = persona ? PORTAL_BY_PERSONA[persona] : '/login';
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="h-16 w-16 rounded-2xl bg-red-50 text-red-500 border border-red-100 flex items-center justify-center mb-6">
+          <ShieldAlert className="h-8 w-8" />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-800">403 Unauthorized</h2>
+        <p className="text-slate-500 mt-2 max-w-sm">You do not have the required permissions to access this page.</p>
+        <Link
+          to={dashboardLink}
+          className="mt-6 px-5 py-2.5 bg-brand-600 text-white font-semibold rounded-xl shadow-md hover:brightness-105 transition-all text-sm cursor-pointer"
+        >
+          Return to Dashboard
+        </Link>
       </div>
-      <h2 className="text-2xl font-bold text-slate-800">403 Unauthorized</h2>
-      <p className="text-slate-500 mt-2 max-w-sm">You do not have the required permissions to access this page.</p>
-      <Link
-        to="/administration/dashboard"
-        className="mt-6 px-5 py-2.5 bg-brand-600 text-white font-semibold rounded-xl shadow-md hover:brightness-105 transition-all text-sm cursor-pointer"
-      >
-        Return to Dashboard
-      </Link>
-    </div>
-  ),
+    );
+  },
 });
 
 // Index: redirect to correct portal
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
+  beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
+    if (context.auth.isAuthenticated) {
+      if (context.auth.user?.must_change_password) throw redirect({ to: '/change-password' });
+      throw redirect({ to: context.auth.persona ? PORTAL_BY_PERSONA[context.auth.persona] : '/administration/dashboard' });
+    }
+    throw redirect({ to: '/login' });
+  },
+});
+
+// Redirect /dashboard to the actual persona dashboard
+const dashboardRedirectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/dashboard',
   beforeLoad: ({ context }) => {
     if (context.auth.isLoading) return;
     if (context.auth.isAuthenticated) {
@@ -211,6 +239,7 @@ const administrationUsersRoute = createRoute({
   getParentRoute: () => administrationLayoutRoute,
   path: 'users',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
     if (!context.auth.hasPermission('users:view')) throw redirect({ to: '/unauthorized' });
   },
   component: withSuspense(UserList),
@@ -220,6 +249,7 @@ const administrationUserCreateRoute = createRoute({
   getParentRoute: () => administrationLayoutRoute,
   path: 'users/new',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
     if (!context.auth.hasPermission('users:create')) throw redirect({ to: '/unauthorized' });
   },
   component: withSuspense(UserCreate),
@@ -229,6 +259,7 @@ const administrationUserDetailsRoute = createRoute({
   getParentRoute: () => administrationLayoutRoute,
   path: 'users/$userId',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
     if (!context.auth.hasPermission('users:view')) throw redirect({ to: '/unauthorized' });
   },
   component: withSuspense(UserDetails),
@@ -238,6 +269,7 @@ const administrationUserEditRoute = createRoute({
   getParentRoute: () => administrationLayoutRoute,
   path: 'users/$userId/edit',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
     if (!context.auth.hasPermission('users:update')) throw redirect({ to: '/unauthorized' });
   },
   component: withSuspense(UserEdit),
@@ -247,6 +279,7 @@ const administrationRolesRoute = createRoute({
   getParentRoute: () => administrationLayoutRoute,
   path: 'roles',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
     if (!context.auth.hasPermission('roles:view')) throw redirect({ to: '/unauthorized' });
   },
   component: withSuspense(RoleList),
@@ -256,6 +289,7 @@ const administrationRoleCreateRoute = createRoute({
   getParentRoute: () => administrationLayoutRoute,
   path: 'roles/new',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
     if (!context.auth.hasPermission('roles:create')) throw redirect({ to: '/unauthorized' });
   },
   component: withSuspense(RoleCreate),
@@ -265,6 +299,7 @@ const administrationRoleDetailsRoute = createRoute({
   getParentRoute: () => administrationLayoutRoute,
   path: 'roles/$roleId',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
     if (!context.auth.hasPermission('roles:view')) throw redirect({ to: '/unauthorized' });
   },
   component: withSuspense(RoleDetails),
@@ -274,6 +309,7 @@ const administrationRoleEditRoute = createRoute({
   getParentRoute: () => administrationLayoutRoute,
   path: 'roles/$roleId/edit',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
     if (!context.auth.hasPermission('roles:update')) throw redirect({ to: '/unauthorized' });
   },
   component: withSuspense(RoleEdit),
@@ -283,6 +319,7 @@ const administrationPermissionsRoute = createRoute({
   getParentRoute: () => administrationLayoutRoute,
   path: 'permissions',
   beforeLoad: ({ context }) => {
+    if (context.auth.isLoading) return;
     if (!context.auth.hasPermission('permissions:view')) throw redirect({ to: '/unauthorized' });
   },
   component: withSuspense(PermissionsMatrix),
@@ -335,6 +372,7 @@ const studentDashboardRoute = createRoute({
 // ---------------------------------------------------------------------------
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  dashboardRedirectRoute,
   unauthorizedRoute,
   changePasswordRoute,
   authLayoutRoute.addChildren([loginRoute]),

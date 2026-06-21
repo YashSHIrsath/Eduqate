@@ -5,6 +5,14 @@ import { getUser, updateUserStatus } from '../api/users';
 import { useAuth } from '../../auth';
 import { ArrowLeft, Edit, Shield, KeyRound, User as UserIcon, Calendar, CheckCircle2, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
 
+const getInitials = (name?: string, email?: string) => {
+  if (!name) return email ? email.substring(0, 2).toUpperCase() : '??';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 0) return '??';
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
 export const UserDetails: React.FC = () => {
   const { userId } = useParams({ from: '/administration/users/$userId' });
   const navigate = useNavigate();
@@ -90,11 +98,40 @@ export const UserDetails: React.FC = () => {
         {/* Left Profile Summary Card */}
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
           <div className="text-center pb-6 border-b border-slate-100">
-            <div className="h-16 w-16 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200 shadow-inner">
-              <UserIcon className="h-8 w-8" />
+            <div className={`h-16 w-16 rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-4 border shadow-inner select-none ${
+              userDetail.persona_type === 'super_admin' ? 'bg-violet-100 text-violet-700 border-violet-200' :
+              userDetail.persona_type === 'headmaster' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+              userDetail.persona_type === 'teacher' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+              'bg-amber-100 text-amber-700 border-amber-200'
+            }`}>
+              {getInitials(userDetail.full_name, userDetail.email)}
             </div>
-            <h3 className="font-bold text-slate-800 text-lg truncate" title={userDetail.email}>{userDetail.email}</h3>
-            <span className="text-xs text-slate-400 block font-mono mt-1 select-all">{userDetail.id}</span>
+            <h3 className="font-bold text-slate-800 text-lg truncate" title={userDetail.full_name || 'No Name Set'}>{userDetail.full_name || 'No Name Set'}</h3>
+            <span className="text-xs text-slate-500 block truncate mt-1">{userDetail.email}</span>
+            <span className="text-[10px] text-slate-400 block font-mono mt-1 select-all">{userDetail.id}</span>
+            
+            <div className="mt-3">
+              {userDetail.persona_type === 'super_admin' && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-50 text-violet-700 border border-violet-200">
+                  Super Admin
+                </span>
+              )}
+              {userDetail.persona_type === 'headmaster' && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  Headmaster
+                </span>
+              )}
+              {userDetail.persona_type === 'teacher' && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Teacher
+                </span>
+              )}
+              {userDetail.persona_type === 'student' && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                  Student
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="space-y-4 text-sm">

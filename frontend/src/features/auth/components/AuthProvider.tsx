@@ -22,6 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const permsResponse = await apiClient.get('/api/v1/auth/permissions');
       setPermissions(permsResponse.data);
+      return { user: userData, permissions: permsResponse.data };
     } catch (error) {
       console.error('Failed to fetch authenticated user metadata:', error);
       setUser(null);
@@ -29,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRoles([]);
       setPermissions([]);
       setAccessToken(null);
+      return null;
     }
   }, []);
 
@@ -46,7 +48,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [fetchUserData]);
 
   const login = async (email: string, password: string, organizationSlug: string) => {
-    setIsLoading(true);
+    // NOTE: Do NOT set isLoading here. LoginCard manages its own isSubmitting state.
+    // Toggling isLoading triggers the root route's loading guard, which causes TanStack
+    // Router to re-mount LoginCard on state change — destroying the error message.
     try {
       const response = await apiClient.post('/api/v1/auth/login', {
         email,
@@ -55,12 +59,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       const { access_token } = response.data;
       setAccessToken(access_token);
-      await fetchUserData();
+      return await fetchUserData();
     } catch (error) {
-      setIsLoading(false);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 

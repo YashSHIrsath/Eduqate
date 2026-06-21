@@ -151,7 +151,7 @@ class AuthService:
         # 1. Resolve organization
         org = self.org_repo.get_by_slug(organization_slug)
         if not org or org.status != "active":
-            raise ValueError("Invalid credentials.") # Generic error to avoid user/org enumeration
+            raise ValueError("Invalid email or password.")
 
         # 2. Retrieve user
         user = self.user_repo.get_by_email(email, organization_id=org.id)
@@ -166,13 +166,13 @@ class AuthService:
                 request_id=request_id,
                 payload={"email": email}
             )
-            raise ValueError("Invalid credentials.")
+            raise ValueError("Invalid email or password.")
 
         # 3. Check Lockout status
         now = datetime.now(timezone.utc)
         if user.locked_until and user.locked_until > now:
             lockout_time_left = int((user.locked_until - now).total_seconds() / 60)
-            raise ValueError(f"Account is locked due to too many failed attempts. Try again in {lockout_time_left} minutes.")
+            raise ValueError("Account is temporarily locked. Please try again later.")
 
         # 4. Verify password
         is_valid = self.password_service.verify_password(password, user.hashed_password)
@@ -190,7 +190,7 @@ class AuthService:
                     user_agent=user_agent,
                     request_id=request_id
                 )
-                raise ValueError("Account locked due to too many failed attempts. Try again in 15 minutes.")
+                raise ValueError("Account is temporarily locked. Please try again later.")
             
             # Audit failed login attempt (incorrect password)
             self.audit_repo.log_action(
@@ -201,10 +201,14 @@ class AuthService:
                 user_agent=user_agent,
                 request_id=request_id
             )
-            raise ValueError("Invalid credentials.")
+            raise ValueError("Invalid email or password.")
 
+        if user.status == "suspended":
+            raise ValueError("Account has been suspended.")
+        if user.status == "inactive":
+            raise ValueError("Account is inactive. Contact your administrator.")
         if user.status != "active":
-            raise ValueError("User account is disabled.")
+            raise ValueError("Account is inactive. Contact your administrator.")
 
         # 5. Login successful: reset failed attempts
         self.user_repo.reset_failed_attempts(user)

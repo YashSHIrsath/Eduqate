@@ -3,9 +3,17 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from '@tanstack/react-router';
 import { getRole } from '../api/roles';
 import { getUsers } from '../../users/api/users';
-import { ArrowLeft, Edit, Shield, KeyRound, Users, RefreshCw, AlertCircle, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Edit, Shield, KeyRound, Users, RefreshCw, AlertCircle, ShieldCheck, Crown, GraduationCap, BookOpen } from 'lucide-react';
 import { useAuth } from '../../auth';
 import { useNavigate } from '@tanstack/react-router';
+
+// ── Persona display metadata ─────────────────────────────────────────────────
+const PERSONA_DISPLAY: Record<string, { label: string; gradient: string; iconBg: string; icon: React.ReactNode }> = {
+  super_admin: { label: 'SUPER ADMIN', gradient: 'from-violet-600 to-indigo-700', iconBg: 'bg-violet-100 text-violet-600', icon: <Crown className="h-4 w-4" /> },
+  headmaster:  { label: 'HEADMASTER',  gradient: 'from-blue-600 to-sky-700',      iconBg: 'bg-blue-100 text-blue-600',    icon: <GraduationCap className="h-4 w-4" /> },
+  teacher:     { label: 'TEACHER',     gradient: 'from-emerald-600 to-teal-700',  iconBg: 'bg-emerald-100 text-emerald-600', icon: <BookOpen className="h-4 w-4" /> },
+  student:     { label: 'STUDENT',     gradient: 'from-amber-500 to-orange-600',  iconBg: 'bg-amber-100 text-amber-600',  icon: <Users className="h-4 w-4" /> },
+};
 
 export const RoleDetails: React.FC = () => {
   const { roleId } = useParams({ from: '/administration/roles/$roleId' });
@@ -79,6 +87,22 @@ export const RoleDetails: React.FC = () => {
             )}
           </div>
 
+          {/* Persona Badge */}
+          {(() => {
+            const pd = PERSONA_DISPLAY[role.persona_type] || { label: role.persona_type?.toUpperCase() || '—', gradient: 'from-slate-500 to-slate-600', iconBg: 'bg-slate-100 text-slate-600', icon: <Shield className="h-4 w-4" /> };
+            return (
+              <div className={`bg-gradient-to-r ${pd.gradient} rounded-xl px-4 py-3 flex items-center gap-3`}>
+                <div className="h-8 w-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+                  {pd.icon}
+                </div>
+                <div>
+                  <span className="text-[9px] text-white/60 uppercase tracking-widest font-bold block">Persona</span>
+                  <span className="text-white font-bold text-sm tracking-wide">{pd.label}</span>
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="space-y-4 text-sm">
             <div>
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Description</span>
@@ -87,10 +111,6 @@ export const RoleDetails: React.FC = () => {
             <div className="flex justify-between items-center">
               <span className="text-slate-400">Total Permissions</span>
               <span className="font-bold text-slate-800">{role.permissions?.length || 0}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400">Persona</span>
-              <span className="text-xs px-2 py-0.5 bg-slate-100 rounded-full font-semibold text-slate-600 border border-slate-200">{role.persona_type || '—'}</span>
             </div>
           </div>
         </div>

@@ -14,7 +14,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 interface LoginCardProps {
-  onSuccess: () => void;
+  onSuccess: (user: any) => void;
 }
 
 export const LoginCard: React.FC<LoginCardProps> = ({ onSuccess }) => {
@@ -39,8 +39,8 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onSuccess }) => {
     setErrorMsg(null);
     setIsSubmitting(true);
     try {
-      await login(values.email, values.password, values.organizationSlug);
-      onSuccess();
+      const authData = await login(values.email, values.password, values.organizationSlug);
+      onSuccess(authData?.user);
     } catch (err: any) {
       console.error('Login error details:', err);
       const detail = err.response?.data?.detail || 'Authentication failed. Please verify credentials.';

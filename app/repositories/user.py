@@ -1,8 +1,8 @@
 from typing import Optional, List, Tuple
 from uuid import UUID
 from datetime import datetime, timezone, timedelta
-from sqlalchemy.orm import Session
-from sqlalchemy import asc, desc
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import asc, desc, or_
 from app.repositories.base import BaseRepository
 from app.models.user import User
 from app.models.role import Role
@@ -53,6 +53,7 @@ class UserRepository(BaseRepository[User]):
         page_size: int = 10,
         search: Optional[str] = None,
         status: Optional[str] = None,
+        persona_type: Optional[str] = None,
         role_id: Optional[UUID] = None,
         sort_by: str = "created_at",
         sort_order: str = "desc"
@@ -64,13 +65,21 @@ class UserRepository(BaseRepository[User]):
         )
 
         if search:
-            query = query.filter(User.email.ilike(f"%{search}%"))
+            query = query.filter(
+                or_(
+                    User.email.ilike(f"%{search}%"),
+                    User.full_name.ilike(f"%{search}%")
+                )
+            )
 
         if status:
             query = query.filter(User.status == status)
 
+        if persona_type:
+            query = query.filter(User.persona_type == persona_type)
+
         if role_id:
-            query = query.join(User.roles).filter(Role.id == role_id)
+            query = query.filter(User.roles.any(Role.id == role_id))
 
         # Total count matching criteria
         total_count = query.count()
@@ -84,7 +93,24 @@ class UserRepository(BaseRepository[User]):
 
         # Apply offset and limit
         offset = (page - 1) * page_size
-        users = query.offset(offset).limit(page_size).all()
+        users = query.options(joinedload(User.roles)).offset(offset).limit(page_size).all()
 
         return users, total_count
+
+    def get_persona_counts(self, organization_id: UUID) -> dict:
+        """Returns user count breakdown by persona for summary cards."""
+        from sqlalchemy import func
+        results = self.db.query(User.persona_type, func.count(User.id)).filter(
+            User.organization_id == organization_id,
+            User.deleted_at == None
+        ).group_by(User.persona_type).all()
+        
+        counts = {r[0]: r[1] for r in results}
+        return {
+            "total": sum(counts.values()),
+            "super_admin": counts.get("super_admin", 0),
+            "headmaster": counts.get("headmaster", 0),
+            "teacher": counts.get("teacher", 0),
+            "student": counts.get("student", 0)
+        }
 
