@@ -12,7 +12,14 @@ HEADMASTER_PERMISSIONS = {
     "permissions:view",
     "students:create", "students:view", "students:update", "students:delete",
     "staff:create", "staff:view", "staff:update", "staff:delete",
-    "academic:create", "academic:view", "academic:update", "academic:delete",
+    "academic_years:create", "academic_years:view", "academic_years:update", "academic_years:delete",
+    "academic_terms:create", "academic_terms:view", "academic_terms:update", "academic_terms:delete",
+    "departments:create", "departments:view", "departments:update", "departments:delete",
+    "classes:create", "classes:view", "classes:update", "classes:delete",
+    "sections:create", "sections:view", "sections:update", "sections:delete",
+    "subjects:create", "subjects:view", "subjects:update", "subjects:delete",
+    "teacher_assignments:create", "teacher_assignments:view", "teacher_assignments:update", "teacher_assignments:delete",
+    "class_subjects:assign", "class_subjects:view",
     "audit_logs:view",
     "settings:view",
     "auth:lockout_reset",
@@ -21,6 +28,13 @@ HEADMASTER_PERMISSIONS = {
 # Permissions granted to the Teacher system role
 TEACHER_PERMISSIONS = {
     "classes:view",
+    "class_subjects:view",
+    "academic_years:view",
+    "academic_terms:view",
+    "departments:view",
+    "sections:view",
+    "subjects:view",
+    "teacher_assignments:view",
     "attendance:mark", "attendance:view",
     "grades:submit", "grades:view",
     "assignments:create", "assignments:view",
@@ -30,11 +44,19 @@ TEACHER_PERMISSIONS = {
 # Permissions granted to the Student system role
 STUDENT_PERMISSIONS = {
     "courses:view",
+    "classes:view",
+    "class_subjects:view",
+    "academic_years:view",
+    "academic_terms:view",
+    "departments:view",
+    "sections:view",
+    "subjects:view",
     "assignments:submit", "assignments:view",
     "results:view",
     "schedule:view",
     "attendance:view",
 }
+
 
 
 def _resolve_or_create_role(
