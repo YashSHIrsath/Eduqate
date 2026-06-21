@@ -44,6 +44,15 @@ class PermissionRepository(BaseRepository[Permission]):
         # Return combined unique permissions list
         return list(set(role_perms.all() + direct_perms.all()))
 
+    def get_direct_user_permissions(self, user_id: UUID) -> List[Permission]:
+        """Retrieve only permissions directly assigned to the user (not from roles)."""
+        return self.db.query(Permission).join(
+            Permission.users
+        ).filter(
+            User.id == user_id,
+            Permission.deleted_at == None
+        ).all()
+
     def get_role_permissions(self, role_id: UUID) -> List[Permission]:
         """Retrieve all permissions mapped to a specific role."""
         role = self.db.query(Role).filter(

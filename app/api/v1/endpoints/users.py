@@ -124,7 +124,8 @@ def get_user_details(
     
     perm_repo = PermissionRepository(db)
     effective_permissions = perm_repo.get_user_permissions(user_id)
-    
+    direct_permissions = perm_repo.get_direct_user_permissions(user_id)
+
     return {
         "id": user.id,
         "organization_id": user.organization_id,
@@ -135,7 +136,8 @@ def get_user_details(
         "must_change_password": user.must_change_password,
         "created_at": user.created_at,
         "roles": user.roles,
-        "permissions": effective_permissions
+        "permissions": effective_permissions,
+        "direct_permissions": direct_permissions,
     }
 
 @router.post("/", response_model=UserCreateResponse, status_code=status.HTTP_201_CREATED)

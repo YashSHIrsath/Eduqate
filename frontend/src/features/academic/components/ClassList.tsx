@@ -82,8 +82,9 @@ export const ClassList: React.FC = () => {
       label: 'Department',
       render: (row) => {
         if (!row.department_id) return <span className="text-xs text-slate-400 italic">None</span>;
+        if (!deptsData) return <span className="text-xs text-slate-400 italic">Loading...</span>;
         const dept = departments.find((d: any) => d.id === row.department_id);
-        return <span>{dept?.name || 'Loading department...'}</span>;
+        return <span>{dept?.name ?? <span className="text-xs text-slate-400 italic">Unknown</span>}</span>;
       },
     },
     {

@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from app.core.database import get_db
 from app.core.config import settings
 from app.schemas.auth import UserRegister, UserLogin, TokenResponse, UserResponse, UserBootstrapResponse
+from app.schemas.user import UserPasswordChange
 from app.dependencies.auth import get_current_user
 from app.models.user import User
 
@@ -239,3 +240,25 @@ def get_permissions(
         user_agent=metadata["user_agent"],
         request_id=metadata["request_id"]
     )
+
+@router.post("/change-password", status_code=status.HTTP_200_OK)
+def change_password(
+    payload: UserPasswordChange,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """Self-service password change — available to every persona."""
+    metadata = get_request_metadata(request)
+    try:
+        auth_service.change_user_password(
+            user_id=current_user.id,
+            current_password=payload.current_password,
+            new_password=payload.new_password,
+            ip_address=metadata["ip_address"],
+            user_agent=metadata["user_agent"],
+            request_id=metadata["request_id"]
+        )
+        return {"message": "Password changed successfully."}
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

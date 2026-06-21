@@ -52,6 +52,25 @@ def create_teacher_assignment(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
+def _enrich(assignment) -> dict:
+    """Build a TeacherAssignmentResponse-compatible dict with embedded teacher info."""
+    teacher = assignment.teacher
+    return {
+        "id": assignment.id,
+        "organization_id": assignment.organization_id,
+        "teacher_id": assignment.teacher_id,
+        "section_id": assignment.section_id,
+        "subject_id": assignment.subject_id,
+        "academic_year_id": assignment.academic_year_id,
+        "is_primary": assignment.is_primary,
+        "status": assignment.status,
+        "teacher_name": teacher.full_name if teacher else None,
+        "teacher_email": teacher.email if teacher else None,
+        "created_at": assignment.created_at,
+        "updated_at": assignment.updated_at,
+        "deleted_at": assignment.deleted_at,
+    }
+
 @router.get("/", response_model=TeacherAssignmentListResponse)
 def list_teacher_assignments(
     teacher_id: Optional[UUID] = None,
@@ -73,7 +92,7 @@ def list_teacher_assignments(
         sort_order=sort_order
     )
     return {
-        "items": items,
+        "items": [_enrich(item) for item in items],
         "total": total,
         "page": page,
         "page_size": page_size
@@ -88,7 +107,7 @@ def get_teacher_assignment(
     assignment = service.assignment_repo.get_by_id_tenant(id, current_user.organization_id)
     if not assignment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Teacher assignment not found.")
-    return assignment
+    return _enrich(assignment)
 
 @router.put("/{id}", response_model=TeacherAssignmentResponse)
 def update_teacher_assignment(
