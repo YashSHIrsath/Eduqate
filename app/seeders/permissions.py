@@ -216,29 +216,185 @@ PERMISSION_CATALOG = [
         "is_system_permission": True
     },
     # -------------------------------------------------------------------------
-    # Academic Management  (admin + headmaster portal — Phase 3)
+    # Academic Management  (admin + headmaster portal)
     # -------------------------------------------------------------------------
     {
-        "name": "academic:create",
-        "description": "Ability to create academic structures (years, departments, classes, sections, subjects).",
+        "name": "academic_years:create",
+        "description": "Ability to create academic years.",
         "category": "Academic Management",
         "is_system_permission": True
     },
     {
-        "name": "academic:view",
-        "description": "Ability to view academic structures.",
+        "name": "academic_years:view",
+        "description": "Ability to view academic years.",
         "category": "Academic Management",
         "is_system_permission": True
     },
     {
-        "name": "academic:update",
-        "description": "Ability to modify academic structures.",
+        "name": "academic_years:update",
+        "description": "Ability to modify academic years.",
         "category": "Academic Management",
         "is_system_permission": True
     },
     {
-        "name": "academic:delete",
-        "description": "Ability to delete academic structures.",
+        "name": "academic_years:delete",
+        "description": "Ability to delete academic years.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "academic_terms:create",
+        "description": "Ability to create academic terms.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "academic_terms:view",
+        "description": "Ability to view academic terms.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "academic_terms:update",
+        "description": "Ability to modify academic terms.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "academic_terms:delete",
+        "description": "Ability to delete academic terms.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "departments:create",
+        "description": "Ability to create departments.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "departments:view",
+        "description": "Ability to view departments.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "departments:update",
+        "description": "Ability to modify departments.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "departments:delete",
+        "description": "Ability to delete departments.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "classes:create",
+        "description": "Ability to create classes.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "classes:view",
+        "description": "Ability to view classes.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "classes:update",
+        "description": "Ability to modify classes.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "classes:delete",
+        "description": "Ability to delete classes.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "sections:create",
+        "description": "Ability to create sections.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "sections:view",
+        "description": "Ability to view sections.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "sections:update",
+        "description": "Ability to modify sections.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "sections:delete",
+        "description": "Ability to delete sections.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "subjects:create",
+        "description": "Ability to create subjects.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "subjects:view",
+        "description": "Ability to view subjects.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "subjects:update",
+        "description": "Ability to modify subjects.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "subjects:delete",
+        "description": "Ability to delete subjects.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "teacher_assignments:create",
+        "description": "Ability to create teacher assignments.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "teacher_assignments:view",
+        "description": "Ability to view teacher assignments.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "teacher_assignments:update",
+        "description": "Ability to modify teacher assignments.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "teacher_assignments:delete",
+        "description": "Ability to delete teacher assignments.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "class_subjects:assign",
+        "description": "Ability to map subjects to classes.",
+        "category": "Academic Management",
+        "is_system_permission": True
+    },
+    {
+        "name": "class_subjects:view",
+        "description": "Ability to view class subject mappings.",
         "category": "Academic Management",
         "is_system_permission": True
     },

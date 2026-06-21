@@ -11,6 +11,12 @@ import {
   CircleUser,
   ChevronLeft,
   ChevronRight,
+  Calendar,
+  Clock,
+  GraduationCap,
+  Layers,
+  BookOpen,
+  UserCheck,
 } from 'lucide-react';
 
 export const AdministrationLayout: React.FC = () => {
@@ -150,6 +156,186 @@ export const AdministrationLayout: React.FC = () => {
               <KeyRound className="h-5 w-5 shrink-0" />
               {!isCollapsed && <span>Permissions</span>}
             </Link>
+          )}
+
+          {/* Academic Management Group */}
+          {(hasPermission('academic_years:view') ||
+            hasPermission('academic_terms:view') ||
+            hasPermission('departments:view') ||
+            hasPermission('classes:view') ||
+            hasPermission('sections:view') ||
+            hasPermission('subjects:view') ||
+            hasPermission('teacher_assignments:view')) && (
+            <>
+              {!isCollapsed ? (
+                <div className="pt-4 pb-2 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Academic Management
+                </div>
+              ) : (
+                <div className="h-px bg-slate-800 my-4 mx-2" />
+              )}
+
+              {hasPermission('academic_years:view') && (
+                <Link
+                  to="/administration/academic/years"
+                  title={isCollapsed ? 'Academic Years' : undefined}
+                  activeProps={{
+                    className: isCollapsed
+                      ? 'bg-brand-600/20 text-brand-400 font-semibold'
+                      : 'bg-brand-600/10 text-brand-400 border-l-4 border-brand-500 font-medium',
+                  }}
+                  inactiveProps={{
+                    className: isCollapsed
+                      ? 'hover:bg-slate-800/50 hover:text-white'
+                      : 'hover:bg-slate-800/50 hover:text-white border-l-4 border-transparent',
+                  }}
+                  className={`flex items-center rounded-lg text-sm transition-all ${
+                    isCollapsed ? 'justify-center py-3 px-2 mx-1' : 'gap-3 px-4 py-3'
+                  }`}
+                >
+                  <Calendar className="h-5 w-5 shrink-0" />
+                  {!isCollapsed && <span>Academic Years</span>}
+                </Link>
+              )}
+
+              {hasPermission('academic_terms:view') && (
+                <Link
+                  to="/administration/academic/terms"
+                  title={isCollapsed ? 'Academic Terms' : undefined}
+                  activeProps={{
+                    className: isCollapsed
+                      ? 'bg-brand-600/20 text-brand-400 font-semibold'
+                      : 'bg-brand-600/10 text-brand-400 border-l-4 border-brand-500 font-medium',
+                  }}
+                  inactiveProps={{
+                    className: isCollapsed
+                      ? 'hover:bg-slate-800/50 hover:text-white'
+                      : 'hover:bg-slate-800/50 hover:text-white border-l-4 border-transparent',
+                  }}
+                  className={`flex items-center rounded-lg text-sm transition-all ${
+                    isCollapsed ? 'justify-center py-3 px-2 mx-1' : 'gap-3 px-4 py-3'
+                  }`}
+                >
+                  <Clock className="h-5 w-5 shrink-0" />
+                  {!isCollapsed && <span>Academic Terms</span>}
+                </Link>
+              )}
+
+              {hasPermission('departments:view') && (
+                <Link
+                  to="/administration/academic/departments"
+                  title={isCollapsed ? 'Departments' : undefined}
+                  activeProps={{
+                    className: isCollapsed
+                      ? 'bg-brand-600/20 text-brand-400 font-semibold'
+                      : 'bg-brand-600/10 text-brand-400 border-l-4 border-brand-500 font-medium',
+                  }}
+                  inactiveProps={{
+                    className: isCollapsed
+                      ? 'hover:bg-slate-800/50 hover:text-white'
+                      : 'hover:bg-slate-800/50 hover:text-white border-l-4 border-transparent',
+                  }}
+                  className={`flex items-center rounded-lg text-sm transition-all ${
+                    isCollapsed ? 'justify-center py-3 px-2 mx-1' : 'gap-3 px-4 py-3'
+                  }`}
+                >
+                  <Building2 className="h-5 w-5 shrink-0" />
+                  {!isCollapsed && <span>Departments</span>}
+                </Link>
+              )}
+
+              {hasPermission('classes:view') && (
+                <Link
+                  to="/administration/academic/classes"
+                  title={isCollapsed ? 'Classes' : undefined}
+                  activeProps={{
+                    className: isCollapsed
+                      ? 'bg-brand-600/20 text-brand-400 font-semibold'
+                      : 'bg-brand-600/10 text-brand-400 border-l-4 border-brand-500 font-medium',
+                  }}
+                  inactiveProps={{
+                    className: isCollapsed
+                      ? 'hover:bg-slate-800/50 hover:text-white'
+                      : 'hover:bg-slate-800/50 hover:text-white border-l-4 border-transparent',
+                  }}
+                  className={`flex items-center rounded-lg text-sm transition-all ${
+                    isCollapsed ? 'justify-center py-3 px-2 mx-1' : 'gap-3 px-4 py-3'
+                  }`}
+                >
+                  <GraduationCap className="h-5 w-5 shrink-0" />
+                  {!isCollapsed && <span>Classes</span>}
+                </Link>
+              )}
+
+              {hasPermission('sections:view') && (
+                <Link
+                  to="/administration/academic/sections"
+                  title={isCollapsed ? 'Sections' : undefined}
+                  activeProps={{
+                    className: isCollapsed
+                      ? 'bg-brand-600/20 text-brand-400 font-semibold'
+                      : 'bg-brand-600/10 text-brand-400 border-l-4 border-brand-500 font-medium',
+                  }}
+                  inactiveProps={{
+                    className: isCollapsed
+                      ? 'hover:bg-slate-800/50 hover:text-white'
+                      : 'hover:bg-slate-800/50 hover:text-white border-l-4 border-transparent',
+                  }}
+                  className={`flex items-center rounded-lg text-sm transition-all ${
+                    isCollapsed ? 'justify-center py-3 px-2 mx-1' : 'gap-3 px-4 py-3'
+                  }`}
+                >
+                  <Layers className="h-5 w-5 shrink-0" />
+                  {!isCollapsed && <span>Sections</span>}
+                </Link>
+              )}
+
+              {hasPermission('subjects:view') && (
+                <Link
+                  to="/administration/academic/subjects"
+                  title={isCollapsed ? 'Subjects' : undefined}
+                  activeProps={{
+                    className: isCollapsed
+                      ? 'bg-brand-600/20 text-brand-400 font-semibold'
+                      : 'bg-brand-600/10 text-brand-400 border-l-4 border-brand-500 font-medium',
+                  }}
+                  inactiveProps={{
+                    className: isCollapsed
+                      ? 'hover:bg-slate-800/50 hover:text-white'
+                      : 'hover:bg-slate-800/50 hover:text-white border-l-4 border-transparent',
+                  }}
+                  className={`flex items-center rounded-lg text-sm transition-all ${
+                    isCollapsed ? 'justify-center py-3 px-2 mx-1' : 'gap-3 px-4 py-3'
+                  }`}
+                >
+                  <BookOpen className="h-5 w-5 shrink-0" />
+                  {!isCollapsed && <span>Subjects</span>}
+                </Link>
+              )}
+
+              {hasPermission('teacher_assignments:view') && (
+                <Link
+                  to="/administration/academic/teachers/assignments"
+                  title={isCollapsed ? 'Teacher Assignments' : undefined}
+                  activeProps={{
+                    className: isCollapsed
+                      ? 'bg-brand-600/20 text-brand-400 font-semibold'
+                      : 'bg-brand-600/10 text-brand-400 border-l-4 border-brand-500 font-medium',
+                  }}
+                  inactiveProps={{
+                    className: isCollapsed
+                      ? 'hover:bg-slate-800/50 hover:text-white'
+                      : 'hover:bg-slate-800/50 hover:text-white border-l-4 border-transparent',
+                  }}
+                  className={`flex items-center rounded-lg text-sm transition-all ${
+                    isCollapsed ? 'justify-center py-3 px-2 mx-1' : 'gap-3 px-4 py-3'
+                  }`}
+                >
+                  <UserCheck className="h-5 w-5 shrink-0" />
+                  {!isCollapsed && <span>Teacher Assignments</span>}
+                </Link>
+              )}
+            </>
           )}
         </nav>
 
