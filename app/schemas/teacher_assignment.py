@@ -53,6 +53,8 @@ class TeacherAssignmentUpdate(BaseModel):
 class TeacherAssignmentResponse(TeacherAssignmentBase):
     id: UUID
     organization_id: UUID
+    teacher_name: Optional[str] = None
+    teacher_email: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     deleted_at: Optional[datetime] = None

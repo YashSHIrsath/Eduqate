@@ -49,7 +49,8 @@ export const UserEdit: React.FC = () => {
       setSelectedPersona(persona);
       setOriginalPersona(persona);
       setSelectedRoles(userDetail.roles.map((r: any) => r.id));
-      setSelectedPermissions(userDetail.permissions.map((p: any) => p.id));
+      // Initialize from direct_permissions only — role permissions are inherited automatically
+      setSelectedPermissions((userDetail.direct_permissions ?? []).map((p: any) => p.id));
     }
   }, [userDetail]);
 
@@ -328,46 +329,72 @@ export const UserEdit: React.FC = () => {
           {/* ── Direct Permission Overrides ──────────────────── */}
           {activeTab === 'permissions' && (
             <div className="space-y-6">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500">
+                <span className="font-semibold text-slate-700">How this works: </span>
+                Permissions marked <span className="font-semibold text-violet-600">Via Role</span> are already granted through the user's assigned role — no action needed. Use this tab only to grant <span className="font-semibold text-indigo-600">extra permissions</span> beyond what the role provides.
+              </div>
               <div className="space-y-8">
-                {Object.keys(permissionsCatalog).map((category) => (
-                  <div key={category} className="space-y-3">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1.5">{category}</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {(permissionsCatalog as any)[category].map((perm: any) => {
-                        const isChecked = selectedPermissions.includes(perm.id);
-                        return (
-                          <div
-                            key={perm.id}
-                            onClick={() =>
-                              setSelectedPermissions(prev =>
-                                prev.includes(perm.id)
-                                  ? prev.filter(id => id !== perm.id)
-                                  : [...prev, perm.id]
-                              )
-                            }
-                            className={`p-3 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-3 ${
-                              isChecked ? 'border-indigo-500 bg-indigo-50/20 shadow-sm' : 'border-slate-100 bg-slate-50/30 hover:bg-slate-50/80'
-                            }`}
-                          >
-                            <div className={`mt-0.5 h-4 w-4 shrink-0 rounded border flex items-center justify-center transition-all ${
-                              isChecked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white'
-                            }`}>
-                              {isChecked && (
-                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                {Object.keys(permissionsCatalog).map((category) => {
+                  const effectivePermIds = new Set((userDetail?.permissions ?? []).map((p: any) => p.id));
+                  const directPermIds = new Set(selectedPermissions);
+                  return (
+                    <div key={category} className="space-y-3">
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1.5">{category}</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {(permissionsCatalog as any)[category].map((perm: any) => {
+                          const isDirect = directPermIds.has(perm.id);
+                          const isViaRole = effectivePermIds.has(perm.id) && !isDirect;
+                          return isViaRole ? (
+                            // Read-only: granted via role
+                            <div
+                              key={perm.id}
+                              className="p-3 rounded-xl border border-violet-200 bg-violet-50/30 flex items-start gap-3 opacity-80"
+                            >
+                              <div className="mt-0.5 h-4 w-4 shrink-0 rounded border border-violet-400 bg-violet-100 flex items-center justify-center">
+                                <svg className="h-3 w-3 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                 </svg>
-                              )}
+                              </div>
+                              <div>
+                                <span className="font-mono text-xs text-slate-700 block">{perm.name}</span>
+                                <span className="text-[10px] text-violet-500 font-semibold block mt-0.5">Via Role</span>
+                              </div>
                             </div>
-                            <div>
-                              <span className="font-mono text-xs text-slate-700 block">{perm.name}</span>
-                              <span className="text-[10px] text-slate-400 block mt-0.5">{perm.description}</span>
+                          ) : (
+                            // Toggleable: direct override
+                            <div
+                              key={perm.id}
+                              onClick={() =>
+                                setSelectedPermissions(prev =>
+                                  prev.includes(perm.id)
+                                    ? prev.filter(id => id !== perm.id)
+                                    : [...prev, perm.id]
+                                )
+                              }
+                              className={`p-3 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-3 ${
+                                isDirect ? 'border-indigo-500 bg-indigo-50/20 shadow-sm' : 'border-slate-100 bg-slate-50/30 hover:bg-slate-50/80'
+                              }`}
+                            >
+                              <div className={`mt-0.5 h-4 w-4 shrink-0 rounded border flex items-center justify-center transition-all ${
+                                isDirect ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white'
+                              }`}>
+                                {isDirect && (
+                                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                              <div>
+                                <span className="font-mono text-xs text-slate-700 block">{perm.name}</span>
+                                <span className="text-[10px] text-slate-400 block mt-0.5">{perm.description}</span>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <button
                 onClick={() => updatePermissionsMutation.mutate(selectedPermissions)}

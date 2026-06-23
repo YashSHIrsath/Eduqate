@@ -52,7 +52,7 @@ export const updateUserPermissions = async (id: string, permissionIds: string[])
 };
 
 export const changePassword = async (payload: { current_password: string; new_password: string }) => {
-  const response = await apiClient.post('/api/v1/admin/users/change-password', payload);
+  const response = await apiClient.post('/api/v1/auth/change-password', payload);
   return response.data;
 };
 

@@ -86,6 +86,7 @@ class UserDetailResponse(BaseModel):
     created_at: datetime
     roles: List[RoleResponse] = []
     permissions: List[PermissionResponse] = []
+    direct_permissions: List[PermissionResponse] = []
 
     class Config:
         from_attributes = True

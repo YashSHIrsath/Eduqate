@@ -1,6 +1,6 @@
 from typing import Optional, List, Tuple
 from uuid import UUID
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import asc, desc
 from app.repositories.base import BaseRepository
 from app.models.subject_teacher import SubjectTeacher
@@ -10,7 +10,9 @@ class TeacherAssignmentRepository(BaseRepository[SubjectTeacher]):
         super().__init__(db, SubjectTeacher)
 
     def get_by_id_tenant(self, id: UUID, organization_id: UUID) -> Optional[SubjectTeacher]:
-        return self.db.query(SubjectTeacher).filter(
+        return self.db.query(SubjectTeacher).options(
+            joinedload(SubjectTeacher.teacher)
+        ).filter(
             SubjectTeacher.id == id,
             SubjectTeacher.organization_id == organization_id,
             SubjectTeacher.deleted_at == None
@@ -26,7 +28,9 @@ class TeacherAssignmentRepository(BaseRepository[SubjectTeacher]):
         sort_by: str = "created_at",
         sort_order: str = "desc"
     ) -> Tuple[List[SubjectTeacher], int]:
-        query = self.db.query(SubjectTeacher).filter(
+        query = self.db.query(SubjectTeacher).options(
+            joinedload(SubjectTeacher.teacher)
+        ).filter(
             SubjectTeacher.organization_id == organization_id,
             SubjectTeacher.deleted_at == None
         )
